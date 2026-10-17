@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "configVersion": 2,
+  "title": { "en": "Schema engine sample", "am": "የእቅድ ማሳያ ምሳሌ" },
+  "description": {
+    "en": "This synthetic example demonstrates service preferences and fictional household records. It is not a Diversity Visa form.",
+    "am": "ይህ ምናባዊ ምሳሌ የአገልግሎት ምርጫዎችንና ምናባዊ የቤተሰብ መዝገቦችን ያሳያል። የDV ቅጽ አይደለም።"
+  },
+  "sections": [
+    {
+      "id": "preferences",
+      "title": { "en": "Example preferences", "am": "የምሳሌ ምርጫዎች" },
+      "description": {
+        "en": "A fake preference shows how the wizard renders JSON-defined choices.",
+        "am": "ምናባዊ ምርጫ የJSON አማራጮች እንዴት እንደሚታዩ ያሳያል።"
+      },
+      "fields": [
+        {
+          "id": "help_language",
+          "type": "select",
+          "label": { "en": "Example help language", "am": "የምሳሌ የእገዛ ቋንቋ" },
+          "help": { "en": "A non-personal sample choice.", "am": "የግል ያልሆነ የምሳሌ ምርጫ።" },
+          "required": true,
+          "options": [
+            { "value": "en", "label": { "en": "English", "am": "እንግሊዝኛ" } },
+            { "value": "am", "label": { "en": "Amharic", "am": "አማርኛ" } }
+          ]
+        },
+        {
+          "id": "show_optional_note",
+          "type": "boolean",
+          "label": { "en": "Show the optional example note field", "am": "አማራጭ የምሳሌ ማስታወሻን አሳይ" },
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "follow_up",
+      "title": { "en": "Optional follow-up", "am": "አማራጭ ተጨማሪ ጥያቄ" },
+      "description": {
+        "en": "A second schema-defined step demonstrates conditional fields.",
+        "am": "ሁለተኛው ደረጃ ሁኔታዊ መስኮችን ያሳያል።"
+      },
+      "fields": [
+        {
+          "id": "optional_note",
+          "type": "textarea",
+          "label": { "en": "Optional example note", "am": "አማራጭ የምሳሌ ማስታወሻ" },
+          "help": { "en": "Demo only. Do not enter real applicant or identity information.", "am": "ለሙከራ ብቻ። እውነተኛ የአመልካች ወይም የማንነት መረጃ አያስገቡ።" },
+          "required": false,
+          "maxLength": 500,
+          "visibleWhen": { "field": "show_optional_note", "equals": true }
+        }
+      ]
+    },
+    {
+      "id": "family_sample",
+      "title": { "en": "Fictional household records", "am": "ምናባዊ የቤተሰብ መዝገቦች" },
+      "description": {
+        "en": "This demonstration uses labels A, B, and C instead of names or dates of birth.",
+        "am": "ይህ ማሳያ ከስምና ከትውልድ ቀን ይልቅ A፣ B እና C መለያዎችን ይጠቀማል።"
+      },
+      "fields": [
+        {
+          "id": "sample_entry_attestation",
+          "type": "boolean",
+          "label": {
+            "en": "For this fictional example only, I understand that this demo cannot find other entries made outside this case.",
+            "am": "ለዚህ ምናባዊ ምሳሌ ብቻ፣ ይህ ሙከራ ከዚህ ጉዳይ ውጭ የተደረጉ ሌሎች ምዝገባዎችን ማግኘት እንደማይችል ተረድቻለሁ።",
+            "am": "ለዚህ ምናባዊ ምሳሌ ብቻ፣ ይህ ሙከራ ከዚህ ጉዳይ ውጭ ያሉ መዝገቦችን ማወቅ እንደማይችል ተረድቻለሁ።"
+          },
+          "help": {
+            "en": "A self-attestation is a reminder only; it cannot prove global uniqueness.",
+            "am": "የራስ ማረጋገጫ ማስታወሻ ብቻ ነው፤ በሁሉም ቦታ ልዩ መሆኑን ማረጋገጥ አይችልም።"
+          },
+          "required": true
+        }
+      ],
+      "repeatableGroups": [
+        {
+          "id": "example_people",
+          "title": { "en": "Add fictional person records", "am": "ምናባዊ የሰው መዝገቦችን ያክሉ" },
+          "help": {
+            "en": "The app checks duplicate sample labels in this list only. These labels are not identity matching.",
+            "am": "መተግበሪያው በዚህ ዝርዝር ውስጥ የተደጋገሙ ምናባዊ መለያዎችን ብቻ ይፈትሻል። መለያዎቹ የማንነት ማወዳደሪያ አይደሉም።"
+          },
+          "minItems": 1,
+          "maxItems": 3,
+          "uniqueField": "sample_person",
+          "fields": [
+            {
+              "id": "sample_person",
+              "type": "select",
+              "label": { "en": "Fictional record label", "am": "ምናባዊ የመዝገብ መለያ" },
+              "help": { "en": "Do not use a real person's name or date of birth.", "am": "የእውነተኛ ሰው ስም ወይም የትውልድ ቀን አይጠቀሙ።" },
+              "required": true,
+              "options": [
+                { "value": "A", "label": { "en": "Example person A", "am": "ምሳሌ ሰው A" } },
+                { "value": "B", "label": { "en": "Example person B", "am": "ምሳሌ ሰው B" } },
+                { "value": "C", "label": { "en": "Example person C", "am": "ምሳሌ ሰው C" } }
+              ]
+            },
+            {
+              "id": "sample_complete",
+              "type": "boolean",
+              "label": { "en": "This fictional record is complete", "am": "ይህ ምናባዊ መዝገብ ተሟልቷል" },
+              "required": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

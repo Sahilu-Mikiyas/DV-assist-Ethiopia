@@ -1,0 +1,10 @@
+DROP TRIGGER IF EXISTS audit_events_append_only ON audit_events;
+DROP TRIGGER IF EXISTS case_events_append_only ON case_events;
+DROP FUNCTION IF EXISTS reject_append_only_mutation();
+DROP TABLE IF EXISTS audit_events;
+DROP TABLE IF EXISTS case_events;
+DROP TABLE IF EXISTS cases;
+DROP TABLE IF EXISTS role_grants;
+DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS auth_challenges;
+DROP TABLE IF EXISTS users;

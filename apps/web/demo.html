@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f7f8f3" />
+  <title>Interactive demo · Ethio DV Assist</title>
+  <link rel="stylesheet" href="/demo.css" />
+  <script type="module" src="/demo.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/"><span class="mark">E</span><span>Ethio <b>DV Assist</b></span></a>
+    <div class="top-actions"><span class="demo-badge" data-i18n="demoBadge">INTERACTIVE DEMO</span><button id="language" class="quiet" type="button">አማርኛ</button><a class="quiet" href="/" data-i18n="exitDemo">Exit demo</a></div>
+  </header>
+  <div class="demo-warning" role="note" data-i18n="warning">DEMO ENVIRONMENT: use synthetic information only. Do not enter real applicant details, upload real photos or documents, or make payments. Nothing here is submitted to the government.</div>
+  <main class="shell">
+    <section class="welcome" id="welcome">
+      <div><p class="eyebrow" data-i18n="previewWorkspace">PREVIEW WORKSPACE</p><h1 data-i18n="welcomeTitle">Explore the preparation flow</h1><p data-i18n="welcomeBody">This clickable prototype demonstrates a possible applicant draft and a staff case queue. It uses your browser session only and has no real account, database, file upload, or payment connection.</p></div>
+      <div class="welcome-actions"><button id="start-applicant" class="primary" type="button"><span data-i18n="openApplicant">Open applicant demo</span> <span>→</span></button><button id="start-staff" class="secondary" type="button" data-i18n="viewStaff">View staff demo</button><button id="reset-demo" class="text-button" type="button" data-i18n="resetDemo">Reset demo data</button></div>
+    </section>
+
+    <section id="applicant" class="workspace" hidden>
+      <div class="workspace-heading"><div><p class="eyebrow" data-i18n="applicantWorkspace">APPLICANT WORKSPACE · SYNTHETIC DATA</p><h1 data-i18n="prepareDraft">Prepare your draft</h1></div><button class="secondary" data-back type="button" data-i18n="demoHome">← Demo home</button></div>
+      <div class="progress-card"><div class="progress-meta"><span id="step-label"></span><span id="save-label" aria-live="polite" data-i18n="demoDraft">Demo draft</span></div><div class="progress-track"><span id="progress"></span></div><div class="steps"><span class="step active" data-step-label="0" data-i18n="stepPersonal">1 · Personal</span><span class="step" data-step-label="1" data-i18n="stepFamily">2 · Family</span><span class="step" data-step-label="2" data-i18n="stepPhoto">3 · Photo & checklist</span><span class="step" data-step-label="3" data-i18n="stepReview">4 · Review</span></div></div>
+      <form id="draft-form" autocomplete="off">
+        <section class="form-panel" data-panel="0">
+          <div class="panel-heading"><div><p class="eyebrow" data-i18n="personalDetails">PERSONAL DETAILS</p><h2 data-i18n="sampleProfile">Start with a sample profile</h2></div><span class="sample-chip" data-i18n="fictionalData">Pre-filled with fictional data</span></div>
+          <div class="field-grid">
+            <label><span data-i18n="givenName">Given name</span><input name="givenName" value="Demo" required /></label>
+            <label><span data-i18n="lastName">Last name</span><input name="lastName" value="Applicant" required /></label>
+            <label><span data-i18n="birthDate">Date of birth</span><input name="birthDate" type="date" value="1998-04-12" required /></label>
+            <label><span data-i18n="birthCity">City of birth</span><input name="birthCity" value="Addis Ababa" required /></label>
+            <label><span data-i18n="birthCountry">Country of birth</span><select name="birthCountry"><option value="Ethiopia" data-i18n="ethiopia">Ethiopia</option><option value="Other" data-i18n="other">Other</option></select></label>
+            <label><span data-i18n="eligibility">Country of eligibility</span><select name="eligibility"><option value="Ethiopia" data-i18n="ethiopia">Ethiopia</option><option value="Other" data-i18n="other">Other</option></select></label>
+            <label><span data-i18n="emailSample">Email (sample only)</span><input name="email" type="email" value="demo@example.invalid" required /></label>
+            <label><span data-i18n="education">Education level</span><select name="education"><option value="High school" data-i18n="highSchool">High school</option><option value="University degree" data-i18n="university">University degree</option><option value="Other / unknown" data-i18n="otherUnknown">Other / unknown</option></select></label>
+            <label><span data-i18n="marital">Marital status</span><select name="marital"><option value="Single" data-i18n="single">Single</option><option value="Married" selected data-i18n="married">Married</option></select></label>
+          </div>
+          <p class="field-note" data-i18n="fieldsNote">These fields are illustrative only. We have not confirmed the current DV cycle’s complete form requirements.</p>
+        </section>
+        <section class="form-panel" data-panel="1" hidden>
+          <div class="panel-heading"><div><p class="eyebrow" data-i18n="familyChecklist">FAMILY CHECKLIST</p><h2 data-i18n="familyTitle">Review the family section</h2></div><span class="sample-chip" data-i18n="demoRows">Editable fictional rows</span></div>
+          <div class="notice-card"><strong data-i18n="rulesPending">Cycle rules not confirmed</strong><p data-i18n="familyRulesNote">Official household requirements can change. This prototype does not decide who must be included. Check the latest official instructions before preparing a real entry.</p></div>
+          <div id="family-list"></div>
+          <div class="family-actions"><button id="add-spouse" class="secondary" type="button" data-i18n="addSpouse">＋ Add fictional spouse</button><button id="add-child" class="secondary" type="button" data-i18n="addChild">＋ Add fictional child</button></div>
+        </section>
+        <section class="form-panel" data-panel="2" hidden>
+          <div class="panel-heading"><div><p class="eyebrow" data-i18n="photoSection">PHOTO & COMPLETENESS</p><h2 data-i18n="checklistTitle">Review the checklist</h2></div><span class="sample-chip" data-i18n="noPhoto">No photo upload in demo</span></div>
+          <div class="notice-card"><strong data-i18n="photoNotBuilt">Photo review is not implemented here</strong><p data-i18n="photoNote">This demo does not accept or analyze photos. Current technical criteria and per-family-member requirements must be verified against the official instructions for the applicable cycle.</p></div>
+          <div class="checklist"><label><input type="checkbox" name="checkInstructions" /><span data-i18n="checkInstructionsLabel">I would check the current official instructions first.</span></label><label><input type="checkbox" name="checkFamily" /><span data-i18n="checkFamilyLabel">I would confirm every required family member is listed.</span></label><label><input type="checkbox" name="checkPhoto" /><span data-i18n="checkPhotoLabel">I would prepare a recent photo for each person required by the current instructions.</span></label></div>
+          <p class="field-note" data-i18n="photoDisclaimer">In the planned service, photo feedback would be advisory and reviewed by a person. It would not guarantee acceptance.</p>
+        </section>
+        <section class="form-panel" data-panel="3" hidden>
+          <div class="panel-heading"><div><p class="eyebrow" data-i18n="reviewApproval">REVIEW & APPROVAL</p><h2 data-i18n="reviewTitle">Review the sample draft</h2></div><span class="sample-chip" data-i18n="notOfficial">Not an official application</span></div>
+          <div id="review-summary" class="review-grid"></div>
+          <div class="notice-card"><strong data-i18n="applicantControl">Applicant control</strong><p data-i18n="applicantControlNote">The applicant should check every answer and submit their own official entry. Ethio DV Assist does not submit entries in this pilot.</p></div>
+          <label class="consent"><input id="consent" type="checkbox" /><span data-i18n="consentLabel">I have reviewed this fictional demo summary and understand it is not submitted anywhere.</span></label>
+          <div id="approval-result" class="approval-result" aria-live="polite"></div>
+        </section>
+        <div class="form-actions"><button id="previous" class="secondary" type="button" hidden data-i18n="previous">← Previous</button><span class="autosave" id="autosave" aria-live="polite" data-i18n="savedTab">Saved in this tab only</span><button id="next" class="primary" type="button"><span data-i18n="continue">Continue</span> <span>→</span></button><button id="approve" class="primary" type="button" hidden data-i18n="approve">Approve demo summary</button></div>
+      </form>
+    </section>
+
+    <section id="staff" class="workspace" hidden>
+      <div class="workspace-heading"><div><p class="eyebrow" data-i18n="staffWorkspace">STAFF WORKSPACE · FICTIONAL CASES</p><h1 data-i18n="caseQueue">Case queue</h1></div><button class="secondary" data-back type="button" data-i18n="demoHome">← Demo home</button></div>
+      <div class="staff-summary"><article><span data-i18n="openCases">OPEN DEMO CASES</span><strong id="open-count">3</strong></article><article><span data-i18n="waitingReview">WAITING FOR REVIEW</span><strong id="review-count">1</strong></article><article><span data-i18n="payment">PAYMENT</span><strong data-i18n="notConnected">Not connected</strong></article></div>
+      <div class="staff-layout"><div class="case-list" id="case-list"></div><aside class="case-detail" id="case-detail"><div class="empty-state"><span>◎</span><h2>Select a demo case</h2><p>Use the fictional case queue to explore status updates and internal notes.</p></div></aside></div>
+      <p class="field-note" data-i18n="staffNote">All names and cases are fictional seed data. Status changes and notes remain in this browser tab and are reset when you close the demo.</p>
+    </section>
+  </main>
+  <footer><span data-i18n="footerLeft">Ethio DV Assist · Local interactive demo</span><span data-i18n="footerRight">No government affiliation · No real applicant data</span></footer>
+</body>
+</html>
