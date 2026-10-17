@@ -28,3 +28,5 @@ generated/
 .idea/
 .DS_Store
 Thumbs.db
+
+/services/api/api.exe
