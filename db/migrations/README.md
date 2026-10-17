@@ -18,6 +18,8 @@ migrate -source 'file://db/migrations' -database $env:DATABASE_URL up
 
 To inspect the current migration version, run `migrate -source 'file://db/migrations' -database $env:DATABASE_URL version`. `down` is an operator-only action: review the migration first and take a verified backup. Application runtime uses a separate least-privilege database role and never applies migrations automatically.
 
+The GitHub Actions `migration-smoke` job runs against a disposable PostgreSQL 17 service container. It applies the migration, rolls it back once, reapplies it, and prints the final version. Its credentials are ephemeral CI fixture values, not production credentials. A passing migration job verifies SQL/runner compatibility for that database image; it does not verify API authorization, account isolation, MFA, SMTP, backups, or production readiness.
+
 ## Proposed file format
 
 Use ordered SQL files with matching up/down operations:

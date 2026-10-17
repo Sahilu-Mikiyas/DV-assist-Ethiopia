@@ -116,7 +116,7 @@ npm run build
 npm run lint
 ```
 
-These checks format, statically analyze, compile, and build the code. They do not prove database migrations, SMTP, account isolation, MFA, or production deployment work. The Phase 3 integration exit gate still requires a disposable PostgreSQL instance and manual end-to-end authorization checks. Docker/PostgreSQL are not available in the current implementation environment.
+These checks format, statically analyze, compile, and build the code. GitHub Actions also applies, rolls back, and reapplies the migration against disposable PostgreSQL 17. These do not prove SMTP, account isolation, MFA, backup restore, or production deployment. Complete those checks before real cases. Docker/psql are not available in the current implementation environment; WSL access is denied, so local database integration could not be run here.
 
 ## Official DV information
 
