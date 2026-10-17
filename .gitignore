@@ -1,0 +1,30 @@
+# Environment secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Node / web app
+node_modules/
+dist/
+.vite/
+coverage/
+
+# Go
+/bin/
+*.test
+*.out
+
+# Local databases, uploads, and generated applicant artifacts
+*.sqlite
+*.db
+local-data/
+uploads/
+generated/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

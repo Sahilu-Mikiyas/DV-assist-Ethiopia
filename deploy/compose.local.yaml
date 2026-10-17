@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ethio_dv_assist
+      POSTGRES_USER: dvassist_dev
+      POSTGRES_PASSWORD: local-only-change-me
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - dvassist_postgres_local:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dvassist_dev -d ethio_dv_assist"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+volumes:
+  dvassist_postgres_local:

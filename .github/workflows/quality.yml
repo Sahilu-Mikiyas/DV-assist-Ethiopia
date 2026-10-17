@@ -1,0 +1,54 @@
+name: Quality checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  app-quality:
+    name: Validate cycle config and build React app
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/app/package-lock.json
+
+      - name: Validate versioned cycle config
+        run: node scripts/validate-cycle-config.mjs
+
+      - name: Install frontend dependencies
+        working-directory: apps/app
+        run: npm ci
+
+      - name: Build and lint React app
+        working-directory: apps/app
+        run: |
+          npm run build
+          npm run lint
+
+  go-quality:
+    name: Format, vet, and build Go API
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: services/api/go.mod
+          cache-dependency-path: services/api/go.mod
+
+      - name: Check formatting, vet, and build
+        shell: pwsh
+        run: ./scripts/check-go.ps1

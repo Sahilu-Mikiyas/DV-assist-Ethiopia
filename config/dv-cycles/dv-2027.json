@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "cycle": "DV-2027",
+  "status": "blocked_pending_official_instructions",
+  "verifiedAt": null,
+  "sections": [],
+  "sources": [
+    "https://travel.state.gov/content/travel/en/us-visas/immigrate/diversity-visa-program-entry/diversity-visa-instructions.html",
+    "https://travel.state.gov/content/travel/en/News/visas-news/changes-to-2027-dv-program-entry-period.html"
+  ],
+  "releaseNotes": [
+    "No DV-2027 applicant fields are published until the applicable official instructions are available and reviewed.",
+    "Do not use this empty configuration to collect DV answers."
+  ]
+}

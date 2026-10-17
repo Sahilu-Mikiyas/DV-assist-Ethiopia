@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ethio-dv-assist.invalid/schemas/cycle-config-v1.json",
+  "title": "Ethio DV Assist cycle configuration v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "cycle", "status", "sections", "sources"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "cycle": { "type": "string", "pattern": "^DV-[0-9]{4}$" },
+    "status": { "enum": ["draft", "blocked_pending_official_instructions", "verified"] },
+    "verifiedAt": { "type": ["string", "null"], "format": "date-time" },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "fields"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
+          "title": { "$ref": "#/$defs/localized" },
+          "fields": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/field" }
+          },
+          "repeatableGroups": { "type": "array", "items": { "$ref": "#/$defs/repeatableGroup" } }
+        }
+      }
+    },
+    "sources": { "type": "array", "items": { "type": "string", "format": "uri" } },
+    "releaseNotes": { "type": "array", "items": { "type": "string", "maxLength": 1000 } }
+  },
+  "$defs": {
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "label", "required"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
+        "type": { "enum": ["text", "textarea", "date", "select", "boolean"] },
+        "label": { "$ref": "#/$defs/localized" },
+        "help": { "$ref": "#/$defs/localized" },
+        "required": { "type": "boolean" },
+        "maxLength": { "type": "integer", "minimum": 1, "maximum": 2000 },
+        "options": { "type": "array", "items": { "$ref": "#/$defs/option" } },
+        "visibleWhen": { "$ref": "#/$defs/condition" }
+      },
+      "allOf": [
+        { "if": { "properties": { "type": { "const": "select" } } }, "then": { "required": ["options"] } },
+        { "if": { "properties": { "type": { "enum": ["text", "textarea"] } } }, "then": { "properties": { "maxLength": { "type": "integer" } } } }
+      ]
+    },
+    "repeatableGroup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "help", "minItems", "maxItems", "uniqueField", "fields"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
+        "title": { "$ref": "#/$defs/localized" },
+        "help": { "$ref": "#/$defs/localized" },
+        "minItems": { "type": "integer", "minimum": 0 },
+        "maxItems": { "type": "integer", "minimum": 1, "maximum": 30 },
+        "uniqueField": { "type": "string" },
+        "fields": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/field" } }
+      }
+    },
+    "localized": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["en", "am"],
+      "properties": { "en": { "type": "string", "minLength": 1 }, "am": { "type": "string", "minLength": 1 } }
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "label"],
+      "properties": { "value": { "type": "string" }, "label": { "$ref": "#/$defs/localized" } }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "equals"],
+      "properties": { "field": { "type": "string" }, "equals": {} }
+    }
+  }
+}
