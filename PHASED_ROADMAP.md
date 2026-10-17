@@ -364,6 +364,8 @@ Staff can process the defined pilot workflow; applicants can understand status a
 
 ## Phase 9 — Service fees, payment tracking, and failure handling
 
+**Current implementation status (October 17, 2026):** Synthetic staff demo shows separate service-fee status, fictional Telebirr reference, and exception/refund states. No real payment, provider verification, receipt, or persistent financial ledger exists. See [Phase 9 operations note](docs/operations/phase-9-service-fees-and-failures.md).
+
 ### Goal
 
 Track the business's own service fee transparently and reconcile it without confusing it with government fees.
@@ -397,6 +399,8 @@ Staff can reconcile every pilot service payment to a case and receipt; applicant
 
 ## Phase 10 — Secure closeout and confirmation delivery (gated)
 
+**Current implementation status (October 17, 2026):** A locked UI notice explains that the demo does not submit entries or accept/store confirmation numbers. Secure vault and delivery are not implemented. See [Phase 10 operations note](docs/operations/phase-10-secure-closeout.md).
+
 ### Goal
 
 Deliver official confirmation details only after an approved, verified operational process actually produces them.
@@ -426,6 +430,8 @@ The precise allowed submission-assistance workflow, applicant participation, gov
 The applicant receives and can retrieve the correct confirmation record; the service has evidence for any “submitted” status; access and delivery are audited; retention/deletion is operational; no unverified automation is involved.
 
 ## Phase 11 — Controlled pilot and launch readiness
+
+**Current implementation status (October 17, 2026):** A read-only home-page launch gate lists outstanding official-rule, database/security, privacy/policy, upload, support, and operational checks. Every gate remains blocked; this is not launch approval. See [Phase 11 operations note](docs/operations/phase-11-pilot-readiness.md).
 
 ### Goal
 
@@ -464,6 +470,8 @@ Do not treat lottery selection or visa outcomes as a product success metric; tho
 Pilot issues are understood and prioritized; no critical privacy, security, payment, or operational gap remains; staff can support the agreed volume; applicants understand the promise and limits; launch claims match functionality actually delivered.
 
 ## Phase 12 — Post-pilot improvements and platform expansion
+
+**Current implementation status (October 17, 2026):** A bilingual self-service results helper links to the official Entrant Status Check and collects no confirmation number or result. Partner tools, analytics, additional languages, and other application modules remain post-pilot work. See [Phase 12 operations note](docs/operations/phase-12-results-helper.md).
 
 Only prioritize these after pilot evidence shows the core service works.
 

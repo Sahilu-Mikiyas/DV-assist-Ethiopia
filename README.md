@@ -26,6 +26,10 @@ Applicant preparation and review assistance for Ethiopian applicants considering
 - [Phase 6 photo review note](docs/operations/phase-6-photo-review.md)
 - [Phase 7 review and acknowledgment note](docs/operations/phase-7-review-and-consent.md)
 - [Phase 8 staff dashboard and operations note](docs/operations/phase-8-staff-operations.md)
+- [Phase 9 service-fee and failure-handling note](docs/operations/phase-9-service-fees-and-failures.md)
+- [Phase 10 secure closeout note](docs/operations/phase-10-secure-closeout.md)
+- [Phase 11 pilot readiness note](docs/operations/phase-11-pilot-readiness.md)
+- [Phase 12 results helper note](docs/operations/phase-12-results-helper.md)
 
 ## Repository layout
 
@@ -63,6 +67,10 @@ After the fictional family sample, the wizard shows a Phase 6 photo-review gate.
 The wizard then presents a Phase 7 review preview with all visible sample answers and fictional family records, per-section Edit controls, an explicitly demo-only acknowledgment, and browser print support for a sample summary. The acknowledgment is held only in component memory; it is not legal consent, server-persisted approval, an official PDF, or proof of government submission. See the [Phase 7 review and acknowledgment note](docs/operations/phase-7-review-and-consent.md).
 
 The synthetic staff dashboard now supports case-name/ID/language search and status filtering. It edits only fictional cases in browser session storage. The authenticated Phase 3 portal is a separate surface with MFA-gated staff queue, server-side status transitions and assignment, and access-audited case timelines; it requires the PostgreSQL integration gate before operational use. Phase 8 capabilities such as applicant-visible correction requests, photo review, internal-note audit history, and operations exception handling remain open. See the [Phase 8 staff dashboard and operations note](docs/operations/phase-8-staff-operations.md).
+
+The staff demo includes a sample-only service-fee ledger for fictional Telebirr references and pending/verified/exception/refund states. It does not accept payments or verify provider transactions. Service-fee policy and a server-side immutable ledger remain launch gates; government fees are separate. See the [Phase 9 service-fee and failure-handling note](docs/operations/phase-9-service-fees-and-failures.md).
+
+The home page shows the Phase 10 confirmation-vault lock and Phase 11 launch-readiness blockers. Phase 12 offers an official self-service status-check link without collecting a confirmation number or checking results on the applicant's behalf. These are boundary/readiness foundations; no submission, confirmation storage, or production launch is enabled. See the [Phase 10](docs/operations/phase-10-secure-closeout.md), [Phase 11](docs/operations/phase-11-pilot-readiness.md), and [Phase 12](docs/operations/phase-12-results-helper.md) operations notes.
 
 ## Run the web and API shells
 

@@ -1,6 +1,7 @@
 import { useEffect, useState, type ChangeEvent, type ReactNode } from 'react'
 import { Phase3Portal } from './Phase3Portal'
 import { SchemaWizard } from './SchemaWizard'
+import { NextPhasesPanel } from './NextPhasesPanel'
 import { clearSchemaWizardDraft } from './schemaStorage'
 import './App.css'
 
@@ -8,15 +9,16 @@ type Lang = 'en' | 'am'
 type Step = 0 | 1 | 2 | 3
 type FamilyMember = { id: string; name: string; relation: 'Spouse' | 'Child' | 'Stepchild' | 'Adopted child'; birthDate: string }
 type CaseStatus = 'In preparation' | 'Needs review' | 'Ready for applicant' | 'Closed'
-type DemoCase = { id: string; name: string; language: string; status: CaseStatus; note: string }
+type ServicePaymentStatus = 'Not requested' | 'Pending verification' | 'Verified (demo)' | 'Mismatch' | 'Refund pending' | 'Refunded' | 'Unable to complete'
+type DemoCase = { id: string; name: string; language: string; status: CaseStatus; note: string; paymentStatus?: ServicePaymentStatus; paymentReference?: string }
 type Draft = { givenName: string; lastName: string; birthDate: string; birthCity: string; birthCountry: string; eligibility: string; email: string; education: string; marital: string }
 type SavedState = { lang?: Lang; step?: Step; draft?: Draft; family?: FamilyMember[]; checks?: boolean[]; approvedAt?: string; cases?: DemoCase[] }
 
 const storageKey = 'ethio-dv-demo-react-v1'
 const seedCases: DemoCase[] = [
-  { id: 'DEMO-1042', name: 'Aster Example', language: 'Amharic', status: 'Needs review', note: 'Confirm the fictional profile is complete.' },
-  { id: 'DEMO-1041', name: 'Bekele Sample', language: 'English', status: 'In preparation', note: '' },
-  { id: 'DEMO-1040', name: 'Hana Placeholder', language: 'Amharic', status: 'Ready for applicant', note: 'Demo case only.' },
+  { id: 'DEMO-1042', name: 'Aster Example', language: 'Amharic', status: 'Needs review', note: 'Confirm the fictional profile is complete.', paymentStatus: 'Pending verification', paymentReference: 'DEMO-TB-1042' },
+  { id: 'DEMO-1041', name: 'Bekele Sample', language: 'English', status: 'In preparation', note: '', paymentStatus: 'Not requested', paymentReference: '' },
+  { id: 'DEMO-1040', name: 'Hana Placeholder', language: 'Amharic', status: 'Ready for applicant', note: 'Demo case only.', paymentStatus: 'Verified (demo)', paymentReference: 'DEMO-TB-1040' },
 ]
 const defaultDraft: Draft = { givenName: 'Demo', lastName: 'Applicant', birthDate: '1998-04-12', birthCity: 'Addis Ababa', birthCountry: 'Ethiopia', eligibility: 'Ethiopia', email: 'demo@example.invalid', education: 'High school', marital: 'Married' }
 const initialFamily: FamilyMember[] = [
@@ -119,6 +121,18 @@ function App() {
     const statusKeys: Record<CaseStatus, string> = { 'In preparation': 'inPreparation', 'Needs review': 'needsReview', 'Ready for applicant': 'readyApplicant', Closed: 'closed' }
     return t(statusKeys[status])
   }
+  const paymentLabel = (status: ServicePaymentStatus | undefined) => {
+    const labels: Record<ServicePaymentStatus, string> = {
+      'Not requested': lang === 'am' ? 'አልተጠየቀም' : 'Not requested',
+      'Pending verification': lang === 'am' ? 'ማረጋገጫ በመጠባበቅ ላይ' : 'Pending verification',
+      'Verified (demo)': lang === 'am' ? 'ተረጋግጧል (ምሳሌ)' : 'Verified (demo)',
+      Mismatch: lang === 'am' ? 'አለመዛመድ' : 'Mismatch / exception',
+      'Refund pending': lang === 'am' ? 'ተመላሽ በመጠባበቅ ላይ' : 'Refund pending',
+      Refunded: lang === 'am' ? 'ተመላሽ ተደርጓል' : 'Refunded',
+      'Unable to complete': lang === 'am' ? 'ማጠናቀቅ አልተቻለም' : 'Unable to complete',
+    }
+    return labels[status || 'Not requested']
+  }
   const visibleCases = cases.filter((item) => (queueFilter === 'All' || item.status === queueFilter) && `${item.name} ${item.id} ${item.language}`.toLowerCase().includes(queueSearch.trim().toLowerCase()))
   const active = visibleCases.find((item) => item.id === activeCase)
 
@@ -136,6 +150,7 @@ function App() {
         </div>
         <div className="welcome-actions"><button className="primary" onClick={() => setView('schema')}>{t('applicantDemo')} <span>→</span></button><button className="secondary" onClick={() => setView('staff')}>{t('staffDemo')}</button><button className="text-button" onClick={reset}>{t('reset')}</button></div>
       </section>}
+      {view === 'home' && <NextPhasesPanel language={lang} />}
       {view === 'home' && <Phase3Portal lang={lang} />}
 
       {view === 'schema' && <SchemaWizard language={lang} onClose={() => setView('home')} />}
@@ -187,10 +202,16 @@ function App() {
       </section>}
 
       {view === 'staff' && <section className="workspace"><div className="workspace-heading"><div><p className="eyebrow">{t('staffSpace')}</p><h1>{t('queue')}</h1></div><button className="secondary" onClick={() => setView('home')}>{t('home')}</button></div>
-        <div className="staff-summary"><article><span>{t('openCases')}</span><strong>{cases.filter((item) => item.status !== 'Closed').length}</strong></article><article><span>{t('waiting')}</span><strong>{cases.filter((item) => item.status === 'Needs review').length}</strong></article><article><span>{t('payment')}</span><strong>{t('notConnected')}</strong></article></div>
+        <div className="staff-summary"><article><span>{t('openCases')}</span><strong>{cases.filter((item) => item.status !== 'Closed').length}</strong></article><article><span>{t('waiting')}</span><strong>{cases.filter((item) => item.status === 'Needs review').length}</strong></article><article><span>{lang === 'am' ? 'የአገልግሎት ክፍያ ልዩ ሁኔታዎች' : 'SERVICE-FEE EXCEPTIONS'}</span><strong>{cases.filter((item) => ['Mismatch', 'Refund pending', 'Unable to complete'].includes(item.paymentStatus || '')).length}</strong></article></div>
         <div className="queue-controls"><label><span>{lang === 'am' ? 'ምናባዊ ጉዳዮችን ፈልግ' : 'Search fictional cases'}</span><input type="search" value={queueSearch} onChange={(event) => setQueueSearch(event.target.value)} placeholder={lang === 'am' ? 'ስም፣ መለያ ወይም ቋንቋ' : 'Name, case ID, or language'} /></label><label><span>{lang === 'am' ? 'በሁኔታ አጣራ' : 'Filter by status'}</span><select value={queueFilter} onChange={(event) => setQueueFilter(event.target.value as 'All' | CaseStatus)}><option value="All">{lang === 'am' ? 'ሁሉም ሁኔታዎች' : 'All statuses'}</option><option value="In preparation">{t('inPreparation')}</option><option value="Needs review">{t('needsReview')}</option><option value="Ready for applicant">{t('readyApplicant')}</option><option value="Closed">{t('closed')}</option></select></label><span className="queue-count">{visibleCases.length} / {cases.length}</span></div>
         <div className="staff-layout"><div className="case-list">{visibleCases.length ? visibleCases.map((item) => <button key={item.id} className={`case-row${item.id === activeCase ? ' selected' : ''}`} onClick={() => setActiveCase(item.id)}><span><strong>{item.name}</strong><small>{item.id} · {t('fictionalCase')}</small></span><span className="status-pill">{formatStatus(item.status)}</span></button>) : <p className="queue-empty">{lang === 'am' ? 'ከዚህ ማጣሪያ ጋር የሚዛመድ ምናባዊ ጉዳይ የለም።' : 'No fictional cases match these filters.'}</p>}</div>
-          <aside className="case-detail">{!active ? <div className="empty-state"><span>◎</span><h2>{t('caseSelect')}</h2><p>{t('caseSelectBody')}</p></div> : <><h2>{active.name}</h2><p className="field-note">{active.id} · {active.language} · {t('fictionalCase')}</p><Field label={t('status')}><select value={active.status} onChange={(event) => setCases((current) => current.map((item) => item.id === active.id ? { ...item, status: event.target.value as CaseStatus } : item))}><option value="In preparation">{t('inPreparation')}</option><option value="Needs review">{t('needsReview')}</option><option value="Ready for applicant">{t('readyApplicant')}</option><option value="Closed">{t('closed')}</option></select></Field><Field label={t('note')}><textarea rows={4} maxLength={280} placeholder={t('notePlaceholder')} value={active.note} onChange={(event) => setCases((current) => current.map((item) => item.id === active.id ? { ...item, note: event.target.value } : item))} /></Field></>}</aside>
+          <aside className="case-detail">{!active ? <div className="empty-state"><span>◎</span><h2>{t('caseSelect')}</h2><p>{t('caseSelectBody')}</p></div> : <><h2>{active.name}</h2><p className="field-note">{active.id} · {active.language} · {t('fictionalCase')}</p><Field label={t('status')}><select value={active.status} onChange={(event) => setCases((current) => current.map((item) => item.id === active.id ? { ...item, status: event.target.value as CaseStatus } : item))}><option value="In preparation">{t('inPreparation')}</option><option value="Needs review">{t('needsReview')}</option><option value="Ready for applicant">{t('readyApplicant')}</option><option value="Closed">{t('closed')}</option></select></Field>
+            <section className="demo-ledger"><div className="demo-ledger-heading"><h3>{lang === 'am' ? 'የምሳሌ የአገልግሎት ክፍያ መዝገብ' : 'Demo service-fee ledger'}</h3><span>{lang === 'am' ? 'የመንግሥት ክፍያ አይደለም' : 'Not a government fee'}</span></div><p className="field-note">{lang === 'am' ? 'የምሳሌ መጠን፦ 1,500 ብር · ቴሌብር · ምናባዊ መዝገብ ብቻ። ክፍያ አይፈጸምም።' : 'Example amount: 1,500 ETB · Telebirr · fictional record only. No payment is made.'}</p>
+              <Field label={lang === 'am' ? 'የሙከራ የክፍያ ሁኔታ' : 'Demo payment state'}><select value={active.paymentStatus || 'Not requested'} onChange={(event) => setCases((current) => current.map((item) => item.id === active.id ? { ...item, paymentStatus: event.target.value as ServicePaymentStatus } : item))}><option value="Not requested">{paymentLabel('Not requested')}</option><option value="Pending verification">{paymentLabel('Pending verification')}</option><option value="Verified (demo)">{paymentLabel('Verified (demo)')}</option><option value="Mismatch">{paymentLabel('Mismatch')}</option><option value="Refund pending">{paymentLabel('Refund pending')}</option><option value="Refunded">{paymentLabel('Refunded')}</option><option value="Unable to complete">{paymentLabel('Unable to complete')}</option></select></Field>
+              <Field label={lang === 'am' ? 'ምናባዊ የቴሌብር ማጣቀሻ' : 'Fictional Telebirr reference'}><input maxLength={64} value={active.paymentReference || ''} placeholder="DEMO-TB-0000" onChange={(event) => setCases((current) => current.map((item) => item.id === active.id ? { ...item, paymentReference: event.target.value } : item))} /></Field>
+              {['Mismatch', 'Refund pending', 'Unable to complete'].includes(active.paymentStatus || '') && <p className="ledger-exception" role="status">{lang === 'am' ? 'ልዩ ሁኔታ፦ እውነተኛውን የክፍያ ሁኔታ በአቅራቢው መዝገብ በእጅ ያረጋግጡ፤ የክፍያ ሁኔታ የDV ማስገባት ማለት አይደለም።' : 'Exception path: verify any real transaction manually against the provider record. A fee state never means a DV entry was submitted.'}</p>}
+            </section>
+            <Field label={t('note')}><textarea rows={4} maxLength={280} placeholder={t('notePlaceholder')} value={active.note} onChange={(event) => setCases((current) => current.map((item) => item.id === active.id ? { ...item, note: event.target.value } : item))} /></Field></>}</aside>
         </div><p className="field-note">{t('staffNote')}</p>
       </section>}
     </main>
