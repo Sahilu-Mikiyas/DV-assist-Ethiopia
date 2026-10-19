@@ -7,12 +7,12 @@ import (
 
 type emailOutboxStatusResponse struct {
 	ObservedAt                time.Time `json:"observedAt"`
-	ReadyPending               int64     `json:"readyPending"`
-	OldestReadyPendingSeconds  int64     `json:"oldestReadyPendingSeconds"`
-	ScheduledRetries           int64     `json:"scheduledRetries"`
-	Processing                 int64     `json:"processing"`
-	ExpiredProcessingLeases    int64     `json:"expiredProcessingLeases"`
-	FailedLast15Minutes        int64     `json:"failedLast15Minutes"`
+	ReadyPending              int64     `json:"readyPending"`
+	OldestReadyPendingSeconds int64     `json:"oldestReadyPendingSeconds"`
+	ScheduledRetries          int64     `json:"scheduledRetries"`
+	Processing                int64     `json:"processing"`
+	ExpiredProcessingLeases   int64     `json:"expiredProcessingLeases"`
+	FailedLast15Minutes       int64     `json:"failedLast15Minutes"`
 }
 
 func (s *Server) emailOutboxStatus(w http.ResponseWriter, r *http.Request) {
