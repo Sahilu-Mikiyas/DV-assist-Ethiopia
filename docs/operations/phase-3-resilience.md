@@ -54,6 +54,68 @@ Verify one delivered code, the 10-minute expiration, one successful verification
 
 The API stores an encrypted outbox row in the same transaction as each sign-in challenge. API instances claim rows using short PostgreSQL leases, so multiple replicas can deliver from one queue. SMTP failures retry with bounded backoff up to five attempts; a permanently failed or expired message loses its encrypted payload and its challenge is revoked. Successful delivery also clears the encrypted payload. Delivery is at-least-once: a process crash after the relay accepts a message but before PostgreSQL records success may send a duplicate message containing the same still-valid code. A successful HTTP response means the request was accepted for processing, not that the recipient received the message. Monitor relay delivery/rejection reports through the provider's protected console.
 
+## Email outbox monitoring
+
+Use these read-only PostgreSQL queries through an operator-only connection. They report counts and age only; never query or export `payload_ciphertext`, email addresses, or challenge codes for routine monitoring.
+
+```sql
+-- Current queue shape. A normal idle queue has no pending or processing rows.
+SELECT status,
+       count(*) AS messages,
+       min(created_at) AS oldest_created_at,
+       max(attempts) AS highest_attempt_count
+FROM auth_email_outbox
+GROUP BY status
+ORDER BY status;
+
+-- Actionable backlog and stale worker leases; contains no recipient or code.
+SELECT count(*) FILTER (
+           WHERE status = 'pending' AND available_at <= now()
+       ) AS ready_pending,
+       round(extract(epoch FROM (now() - min(created_at) FILTER (
+           WHERE status = 'pending' AND available_at <= now()
+       ))))::bigint AS oldest_ready_pending_seconds,
+       count(*) FILTER (
+           WHERE status = 'processing' AND locked_until <= now()
+       ) AS expired_processing_leases,
+       count(*) FILTER (
+           WHERE status = 'failed' AND updated_at >= now() - interval '15 minutes'
+       ) AS failures_last_15m
+FROM auth_email_outbox;
+```
+
+For the pilot, alert immediately on any newly failed outbox row or SMTP-provider rejection. Page the operator if a ready pending message remains older than two minutes or a processing lease is expired on two consecutive checks. Treat these as starting thresholds: adjust them after a staging baseline, and do not promise email delivery times until the relay and hosting are rehearsed. Also monitor database availability/latency and the SMTP provider's delivery and rejection dashboard. Correlate using the outbox UUID and generic error code only; application logs must never include recipient, one-time code, or ciphertext.
+
+The worker polls every two seconds, leases one message at a time for 30 seconds, and retries up to five attempts with bounded backoff. A pending row may therefore be waiting for its scheduled retry; alert on age of a *ready* pending row, not all pending rows. A failed row is terminal and its challenge is revoked. Ask the account owner to request a fresh code after correcting the relay problem.
+
+## Outbox encryption key rotation and recovery
+
+The current outbox format uses one active 32-byte AES-GCM key and does not store a key version. Do not replace the key while any encrypted pending or processing payload remains. Losing the active key makes those queued messages undecryptable; there is no automatic recovery or dual-key rotation support.
+
+For a planned rotation:
+
+1. Schedule a brief sign-in challenge maintenance window and block new `POST /api/v1/auth/challenges` requests at the trusted ingress. Keep verification available for already delivered codes.
+2. Let every API worker finish its current SMTP attempt. Check the queue query above until no rows are pending or processing; investigate failed rows separately.
+3. Stop all API instances and verify they are stopped, so no worker can claim a row during the change.
+4. Generate a new independent 32-byte key in the deployment secret manager. Update `MAIL_OUTBOX_ENCRYPTION_KEY_B64` for every API instance as one deployment change; never put the value in a shell transcript, ticket, log, or repository.
+5. Start the API instances, verify health and synthetic email delivery, then reopen the challenge route. Record the rotation time and operator in the approved change log, not the key.
+
+If a queue cannot be drained, postpone planned rotation. For suspected key loss or compromise, treat queued messages as unrecoverable, block new challenges, preserve sanitized evidence, and follow the incident process to cancel affected outbox rows and revoke their still-active challenges before restoring service. Do not delete or rewrite queue rows until incident ownership approves the action. Rotate a compromised key even if that means users must request fresh codes. Restore of the database alone is not sufficient unless the matching key backup is available and authorized.
+
+## Staging email-delivery rehearsal
+
+Run this with a controlled synthetic mailbox and a staging SMTP relay, never an applicant address:
+
+1. Confirm the staging API uses HTTPS, the staging database, a separately stored 32-byte outbox key, and the intended SMTP sender. Verify no production database or secret is connected.
+2. Request a sign-in code and verify a message arrives. Confirm the response is generic, the code is absent from API responses and logs, and the database stores ciphertext rather than a readable email/code payload.
+3. Verify the code once, reject its second use, and confirm expiration behavior with a disposable short-lived challenge. Request a second code and confirm the previous pending message/challenge is cancelled or unusable.
+4. Temporarily make the staging relay unavailable. Confirm the request still returns the generic accepted response, the job remains encrypted and pending for retry, and the challenge is revoked after terminal failure. Restore the relay and verify a later retry delivers.
+5. Restart one API instance while a synthetic message is pending, then verify the remaining instance processes it. Record that delivery is at-least-once and duplicates are possible around a crash after relay acceptance.
+6. Inspect sanitized logs and the aggregate SQL above. Confirm there is no recipient, code, token, or ciphertext. Verify the failure alert reaches the named operator and can be acknowledged.
+7. Rehearse the planned key-rotation procedure with an empty queue and a non-production key. Prove the API resumes delivery with the new key; document timestamps, environment, operator, outcomes, and follow-up items.
+
+The operator records evidence in the protected operations log. A written checklist or CI's local fake-SMTP tests do not count as a live staging mailbox or provider rehearsal. Keep real applicant intake disabled until this and the other Phase 3 launch gates pass.
+
 ## Rate-limit and proxy configuration
 
 When PostgreSQL is configured, sign-in request and verification limits use the shared `auth_rate_limits` table, so replicas coordinate counters and API restarts do not reset active windows. Development mode without a database keeps the in-memory limiter. The rules remain 8 challenge requests per client IP per 15 minutes, 4 per normalized email per hour, 20 verification attempts per client IP per 15 minutes, and 10 per normalized email per 15 minutes. Database errors fail closed with a temporary-unavailable response; monitor database latency because auth requests now depend on the shared counter write.
