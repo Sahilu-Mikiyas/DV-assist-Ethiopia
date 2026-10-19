@@ -87,18 +87,18 @@ func main() {
 		}
 	}
 	config := api.Config{
-		AppEnv:            appEnv,
-		AuthOTPPepper:     []byte(os.Getenv("AUTH_OTP_PEPPER")),
-		MFAEncryptionKey:  mfaKey,
-		SMTPAddress:       os.Getenv("SMTP_ADDR"),
-		SMTPUsername:      os.Getenv("SMTP_USERNAME"),
-		SMTPPassword:      os.Getenv("SMTP_PASSWORD"),
+		AppEnv:                   appEnv,
+		AuthOTPPepper:            []byte(os.Getenv("AUTH_OTP_PEPPER")),
+		MFAEncryptionKey:         mfaKey,
+		SMTPAddress:              os.Getenv("SMTP_ADDR"),
+		SMTPUsername:             os.Getenv("SMTP_USERNAME"),
+		SMTPPassword:             os.Getenv("SMTP_PASSWORD"),
 		EmailOutboxEncryptionKey: emailOutboxKey,
-		SMTPFrom:          os.Getenv("SMTP_FROM"),
-		PublicOrigin:      os.Getenv("PUBLIC_ORIGIN"),
-		SecureCookies:     appEnv != "development",
-		DevelopmentCode:   appEnv == "development" && isLoopbackAddress(address),
-		TrustedProxyCIDRs: trustedProxyCIDRs,
+		SMTPFrom:                 os.Getenv("SMTP_FROM"),
+		PublicOrigin:             os.Getenv("PUBLIC_ORIGIN"),
+		SecureCookies:            appEnv != "development",
+		DevelopmentCode:          appEnv == "development" && isLoopbackAddress(address),
+		TrustedProxyCIDRs:        trustedProxyCIDRs,
 	}
 
 	mux := http.NewServeMux()
