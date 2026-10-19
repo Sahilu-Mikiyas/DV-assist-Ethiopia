@@ -133,3 +133,87 @@ jobs:
       - name: Run Phase 3 PostgreSQL integration checks
         working-directory: services/api
         run: go test -race -count=1 ./...
+  phase3-operations-smoke:
+    name: Verify Phase 3 least-privilege access and database restore
+    runs-on: ubuntu-latest
+    env:
+      ADMIN_DATABASE_URL: postgres://dvassist_dev:local-only-change-me@localhost:5432/ethio_dv_assist?sslmode=disable
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: ethio_dv_assist
+          POSTGRES_USER: dvassist_dev
+          POSTGRES_PASSWORD: local-only-change-me
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dvassist_dev -d ethio_dv_assist"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: services/api/go.mod
+          cache-dependency-path: services/api/go.mod
+
+      - name: Install pinned golang-migrate CLI
+        run: |
+          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.20.1
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Apply migrations
+        run: migrate -source "file://$GITHUB_WORKSPACE/db/migrations" -database "$ADMIN_DATABASE_URL" up
+
+      - name: Provision runtime and backup roles
+        run: |
+          set -euo pipefail
+          db_container="$(docker ps --filter 'ancestor=postgres:17-alpine' --format '{{.ID}}' | head -n 1)"
+          test -n "$db_container"
+          docker exec -i "$db_container" psql -U dvassist_dev -d ethio_dv_assist -v database_name=ethio_dv_assist -v ON_ERROR_STOP=1 -f - < db/operations/phase3_runtime_roles.sql
+
+          runtime_password="$(openssl rand -hex 32)"
+          backup_password="$(openssl rand -hex 32)"
+          {
+            printf "ALTER ROLE dvassist_runtime PASSWORD '%s';\n" "$runtime_password"
+            printf "ALTER ROLE dvassist_backup PASSWORD '%s';\n" "$backup_password"
+          } | docker exec -i "$db_container" psql -U dvassist_dev -d ethio_dv_assist -v ON_ERROR_STOP=1
+
+          printf "DATABASE_CONTAINER_ID=%s\n" "$db_container" >> "$GITHUB_ENV"
+          printf "RUNTIME_DATABASE_URL=postgres://dvassist_runtime:%s@localhost:5432/ethio_dv_assist?sslmode=disable\n" "$runtime_password" >> "$GITHUB_ENV"
+          printf "BACKUP_DATABASE_URL=postgres://dvassist_backup:%s@localhost:5432/ethio_dv_assist?sslmode=disable\n" "$backup_password" >> "$GITHUB_ENV"
+          printf "RESTORE_DATABASE_URL=postgres://dvassist_dev:local-only-change-me@localhost:5432/ethio_dv_assist_restore?sslmode=disable\n" >> "$GITHUB_ENV"
+
+      - name: Verify runtime and backup privileges
+        run: |
+          set -euo pipefail
+          runtime_query="SELECT r.rolsuper, r.rolcreatedb, r.rolcreaterole, has_database_privilege(current_user,current_database(),'CREATE'), has_schema_privilege(current_user,'public','CREATE'), has_table_privilege(current_user,'audit_events','UPDATE'), has_table_privilege(current_user,'audit_events','DELETE') FROM pg_roles r WHERE r.rolname=current_user"
+          runtime_acl="$(docker exec -e RUNTIME_DATABASE_URL="$RUNTIME_DATABASE_URL" -e ACL_QUERY="$runtime_query" "$DATABASE_CONTAINER_ID" sh -c 'psql "$RUNTIME_DATABASE_URL" -Atc "$ACL_QUERY"')"
+          test "$runtime_acl" = "f|f|f|f|f|f|f"
+
+          backup_query="SELECT has_table_privilege(current_user,'audit_events','SELECT'), has_table_privilege(current_user,'audit_events','UPDATE')"
+          backup_acl="$(docker exec -e BACKUP_DATABASE_URL="$BACKUP_DATABASE_URL" -e ACL_QUERY="$backup_query" "$DATABASE_CONTAINER_ID" sh -c 'psql "$BACKUP_DATABASE_URL" -Atc "$ACL_QUERY"')"
+          test "$backup_acl" = "t|f"
+
+      - name: Run API database integration checks as runtime role
+        working-directory: services/api
+        run: DATABASE_URL="$RUNTIME_DATABASE_URL" go test -race -count=1 ./...
+
+      - name: Back up and restore synthetic database
+        run: |
+          set -euo pipefail
+          docker exec -e BACKUP_DATABASE_URL="$BACKUP_DATABASE_URL" "$DATABASE_CONTAINER_ID" sh -c 'pg_dump --format=custom --no-owner "$BACKUP_DATABASE_URL"' > "$RUNNER_TEMP/phase3-operations.dump"
+          docker exec -i "$DATABASE_CONTAINER_ID" pg_restore --list < "$RUNNER_TEMP/phase3-operations.dump" >/dev/null
+          docker exec "$DATABASE_CONTAINER_ID" psql -U dvassist_dev -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE ethio_dv_assist_restore'
+          docker exec -i -e RESTORE_DATABASE_URL="$RESTORE_DATABASE_URL" "$DATABASE_CONTAINER_ID" sh -c 'pg_restore --exit-on-error --no-owner --dbname="$RESTORE_DATABASE_URL"' < "$RUNNER_TEMP/phase3-operations.dump"
+
+          counts_sql="SELECT (SELECT count(*) FROM users)::text || ':' || (SELECT count(*) FROM cases)::text || ':' || (SELECT count(*) FROM case_events)::text || ':' || (SELECT count(*) FROM audit_events)::text"
+          source_counts="$(docker exec -e BACKUP_DATABASE_URL="$BACKUP_DATABASE_URL" -e COUNTS_SQL="$counts_sql" "$DATABASE_CONTAINER_ID" sh -c 'psql "$BACKUP_DATABASE_URL" -Atc "$COUNTS_SQL"')"
+          restored_counts="$(docker exec -e RESTORE_DATABASE_URL="$RESTORE_DATABASE_URL" -e COUNTS_SQL="$counts_sql" "$DATABASE_CONTAINER_ID" sh -c 'psql "$RESTORE_DATABASE_URL" -Atc "$COUNTS_SQL"')"
+          test "$source_counts" = "$restored_counts"
+
