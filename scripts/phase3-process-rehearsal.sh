@@ -114,7 +114,7 @@ for attempt in 1 2 3 4; do
     port=18082
   fi
   status="$(post_challenge "$port" "$email" '198.51.100.10, 127.0.0.2')"
-  expect_status 200 "$status" "shared email limit request $attempt"
+  expect_status 202 "$status" "shared email limit request $attempt"
 done
 status="$(post_challenge 18082 "$email" '198.51.100.10, 127.0.0.2')"
 expect_status 429 "$status" "shared email limit across API processes"
@@ -129,15 +129,15 @@ expect_status 429 "$status" "shared email limit after API process restart"
 for attempt in {1..8}; do
   email="trusted-proxy-$run_id-$attempt@example.test"
   status="$(post_challenge 18082 "$email" '198.51.100.55, 127.0.0.2')"
-  expect_status 200 "$status" "trusted forwarded client request $attempt"
+  expect_status 202 "$status" "trusted forwarded client request $attempt"
 done
 email="trusted-proxy-$run_id-new-client@example.test"
 status="$(post_challenge 18082 "$email" '198.51.100.56, 127.0.0.2')"
-expect_status 200 "$status" "new trusted forwarded client"
+expect_status 202 "$status" "new trusted forwarded client"
 for attempt in {2..8}; do
   email="trusted-proxy-$run_id-next-$attempt@example.test"
   status="$(post_challenge 18082 "$email" '198.51.100.56, 127.0.0.2')"
-  expect_status 200 "$status" "trusted forwarded client request $attempt"
+  expect_status 202 "$status" "trusted forwarded client request $attempt"
 done
 email="trusted-proxy-$run_id-next-limit@example.test"
 status="$(post_challenge 18082 "$email" '198.51.100.56, 127.0.0.2')"
@@ -161,7 +161,7 @@ for attempt in {1..8}; do
     port=18082
   fi
   status="$(post_challenge "$port" "$email" "$forwarded_ip")"
-  expect_status 200 "$status" "untrusted forwarded header request $attempt"
+  expect_status 202 "$status" "untrusted forwarded header request $attempt"
 done
 email="untrusted-proxy-$run_id-limit@example.test"
 status="$(post_challenge 18082 "$email" '198.51.100.199, 192.0.2.2')"
