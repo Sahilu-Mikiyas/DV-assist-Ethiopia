@@ -48,9 +48,11 @@ The operator records backup time, archive checksum, restore start/end, migration
 
 Production requires an HTTPS `PUBLIC_ORIGIN`, SMTP host and sender, and an SMTP relay that supports STARTTLS. Use a test mailbox controlled by the operator and a staging relay configuration. Never use real applicant addresses for readiness drills.
 
+When SMTP is configured, set `MAIL_OUTBOX_ENCRYPTION_KEY_B64` to a separately managed base64 value that decodes to exactly 32 bytes. The API encrypts the queued recipient and sign-in code with AES-GCM before storing them in PostgreSQL. Keep the key in the deployment secret manager, restrict access to the API service, and include a tested key-rotation/recovery procedure before storing production traffic.
+
 Verify one delivered code, the 10-minute expiration, one successful verification, a second-use rejection, and the generic response for unknown/disabled accounts. Then test invalid relay DNS, connection refusal, a relay without STARTTLS, rejected credentials, and recipient rejection. Responses must remain anti-enumerating, logs must contain no address or code, and a failed delivery must not leave that challenge usable. Requesting a fresh code is the recovery path.
 
-Delivery is synchronous and has no durable outbox or automatic retry. A successful API response means the request was accepted, not that the recipient received the message. Monitor relay delivery/rejection reports through the provider's protected console. Add an outbox, retry policy, delivery status, and alerting before promising reliable email delivery or running multiple API replicas.
+The API stores an encrypted outbox row in the same transaction as each sign-in challenge. API instances claim rows using short PostgreSQL leases, so multiple replicas can deliver from one queue. SMTP failures retry with bounded backoff up to five attempts; a permanently failed or expired message loses its encrypted payload and its challenge is revoked. Successful delivery also clears the encrypted payload. Delivery is at-least-once: a process crash after the relay accepts a message but before PostgreSQL records success may send a duplicate message containing the same still-valid code. A successful HTTP response means the request was accepted for processing, not that the recipient received the message. Monitor relay delivery/rejection reports through the provider's protected console.
 
 ## Rate-limit and proxy configuration
 
