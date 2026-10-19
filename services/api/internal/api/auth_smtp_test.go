@@ -213,4 +213,3 @@ func smtpReply(conn net.Conn, reply string) bool {
 	_, err := fmt.Fprintf(conn, "%s\r\n", reply)
 	return err == nil
 }
-
