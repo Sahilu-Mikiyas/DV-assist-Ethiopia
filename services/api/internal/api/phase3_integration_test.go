@@ -216,7 +216,6 @@ func TestPhase3MigrationIsAvailable(t *testing.T) {
 	}
 }
 
-
 func TestPhase3AuthRateLimitsAreSharedAcrossInstancesAndRestart(t *testing.T) {
 	db := phase3TestDB(t)
 	config := Config{AuthOTPPepper: bytes.Repeat([]byte("r"), 32)}
@@ -267,4 +266,3 @@ func TestClientIPUsesForwardedChainOnlyForTrustedPeers(t *testing.T) {
 		t.Fatalf("malformed forwarded chain clientIP() = %q, want direct peer 10.20.1.7", got)
 	}
 }
-
