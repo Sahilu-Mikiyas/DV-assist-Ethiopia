@@ -41,5 +41,6 @@ All ownership and role rules are enforced in the API. Hiding a UI control is not
 - Sensitive state changes and case views create append-only case/audit records. PostgreSQL's table owner can bypass triggers; production should use separate migration and runtime roles, and runtime must not own tables.
 - The API's in-memory limiter is per process and resets at restart. It is not sufficient for a multi-instance public deployment.
 - Email delivery uses SMTP with STARTTLS; production startup requires database, HTTPS public origin, and valid SMTP configuration. Delivery retry/outbox and monitoring are not implemented.
+- When configured SMTP delivery fails, the API keeps the anti-enumeration response and revokes that challenge so it cannot be used without a delivered code. Delivery outcome after the message body is accepted can be uncertain; the applicant may need to request a fresh code.
 - `GET /healthz` is a process health check, not a dependency readiness check.
 - Phase 3 does not meet a real-data launch gate until PostgreSQL integration, restore, access-isolation, MFA, privacy, retention, and operational checks are completed.

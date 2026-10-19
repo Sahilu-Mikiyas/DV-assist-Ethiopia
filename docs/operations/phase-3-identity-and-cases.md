@@ -67,5 +67,6 @@ There are no user-held backup codes in this phase. After verifying the requester
 - Run migration and rollback/restore checks on disposable PostgreSQL, then perform two-account ownership checks, assigned/unassigned staff checks, MFA challenge/replay/rate-limit checks, logout, stale revision, admin bootstrap and last-admin tests.
 - Add email outbox/retry monitoring and a production-grade distributed rate limiter before multi-instance production deployment. The current rate limiter is process-local.
 - Configure HTTPS termination, secure cookies, database backups and restore, least-privilege runtime DB grants, SMTP STARTTLS credentials, monitoring, alerts, and an incident contact.
+- Use the [Phase 3 resilience runbook](phase-3-resilience.md) for explicit role grants, protected backup/restore rehearsal, SMTP failure drills, and the current single-process rate-limit boundary. These are procedures to execute and record, not claims that a production environment has passed them.
 - Approve privacy, consent, retention/deletion, terms, refund, support response, and staff-access review policies.
 - Do not treat this phase's case shell as DV application intake. No actual DV answers, family records, image uploads, payment proof, confirmation details, or government portal access belong here.
