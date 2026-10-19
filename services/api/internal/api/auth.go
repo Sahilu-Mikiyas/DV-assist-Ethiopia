@@ -104,7 +104,6 @@ func (s *Server) requestChallenge(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "request_failed", "The request could not be completed.")
 		return
 	}
-	challengeID := newUUID()
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -124,8 +123,33 @@ func (s *Server) requestChallenge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !disabled.Valid {
-		if _, err = tx.ExecContext(ctx, `UPDATE auth_challenges SET consumed_at=now() WHERE user_id=$1::uuid AND consumed_at IS NULL`, userID); err == nil {
+		challengeID := newUUID()
+		var outboxID string
+		var encryptedPayload []byte
+		if !s.config.DevelopmentCode && s.config.SMTPAddress != "" {
+			outboxID = newUUID()
+			encryptedPayload, err = s.encryptEmailOutboxPayload(outboxID, emailOutboxPayload{Email: email, Code: code})
+			if err != nil {
+				s.logger.Error("encrypt auth email outbox payload", "request_id", requestID(r), "reason", "internal_failure")
+				writeError(w, http.StatusInternalServerError, "request_failed", "The request could not be completed.")
+				return
+			}
+		}
+		_, err = tx.ExecContext(ctx, `
+			UPDATE auth_email_outbox
+			SET status='cancelled', payload_ciphertext=NULL, locked_until=NULL, updated_at=now()
+			WHERE status IN ('pending', 'processing')
+			  AND challenge_id IN (
+				SELECT id FROM auth_challenges WHERE user_id=$1::uuid AND consumed_at IS NULL
+			  )`, userID)
+		if err == nil {
+			_, err = tx.ExecContext(ctx, `UPDATE auth_challenges SET consumed_at=now() WHERE user_id=$1::uuid AND consumed_at IS NULL`, userID)
+		}
+		if err == nil && (s.config.DevelopmentCode || s.config.SMTPAddress != "") {
 			_, err = tx.ExecContext(ctx, `INSERT INTO auth_challenges(id,user_id,code_digest,expires_at) VALUES($1::uuid,$2::uuid,$3,now()+interval '10 minutes')`, challengeID, userID, s.otpDigest(challengeID, code))
+		}
+		if err == nil && outboxID != "" {
+			_, err = tx.ExecContext(ctx, `INSERT INTO auth_email_outbox(id,challenge_id,payload_ciphertext) VALUES($1::uuid,$2::uuid,$3)`, outboxID, challengeID, encryptedPayload)
 		}
 	}
 	if err != nil {
@@ -140,21 +164,8 @@ func (s *Server) requestChallenge(w http.ResponseWriter, r *http.Request) {
 	}
 	// The response is deliberately identical for new, existing, and disabled accounts.
 	response := map[string]any{"message": "If this address can sign in, a code has been sent."}
-	if !disabled.Valid {
-		if s.config.DevelopmentCode {
-			response["developmentCode"] = code
-		} else if err := s.sendCode(email, code); err != nil {
-			// Do not include the address or code in logs. The response remains anti-enumerating.
-			s.logger.Error("deliver auth challenge", "request_id", requestID(r), "reason", "internal_failure")
-			// A code that could not be delivered must not remain usable. If delivery
-			// outcome is uncertain, the applicant can request a fresh challenge.
-			cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 2*time.Second)
-			_, cleanupErr := s.db.ExecContext(cleanupCtx, `UPDATE auth_challenges SET consumed_at=now() WHERE id=$1::uuid AND consumed_at IS NULL`, challengeID)
-			cleanupCancel()
-			if cleanupErr != nil {
-				s.logger.Error("revoke undelivered auth challenge", "request_id", requestID(r), "reason", "internal_failure")
-			}
-		}
+	if !disabled.Valid && s.config.DevelopmentCode {
+		response["developmentCode"] = code
 	}
 	writeJSON(w, http.StatusAccepted, response)
 }

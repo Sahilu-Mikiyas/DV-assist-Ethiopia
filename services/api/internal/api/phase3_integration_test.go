@@ -266,3 +266,126 @@ func TestClientIPUsesForwardedChainOnlyForTrustedPeers(t *testing.T) {
 		t.Fatalf("malformed forwarded chain clientIP() = %q, want direct peer 10.20.1.7", got)
 	}
 }
+
+func TestPhase3AuthEmailOutboxEncryptsAndDelivers(t *testing.T) {
+	db := phase3TestDB(t)
+	relay := startTestSMTPRelay(t, true, false)
+	email := "outbox-" + strings.ReplaceAll(newUUID(), "-", "") + "@example.test"
+	server := &Server{
+		db: db,
+		config: Config{
+			AuthOTPPepper:            bytes.Repeat([]byte("p"), 32),
+			EmailOutboxEncryptionKey: bytes.Repeat([]byte("k"), 32),
+			SMTPAddress:              relay.address,
+			SMTPFrom:                 "signin@example.test",
+			SMTPRootCAs:              relay.roots,
+		},
+		logger:   slog.New(slog.NewTextHandler(io.Discard, nil)),
+		limit:    newRateLimiter(),
+		smtpDial: relay.dial,
+	}
+	body, err := json.Marshal(map[string]string{"email": email})
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/challenges", bytes.NewReader(body))
+	response := httptest.NewRecorder()
+	server.requestChallenge(response, request)
+	if response.Code != http.StatusAccepted {
+		t.Fatalf("request challenge status=%d body=%s, want 202", response.Code, response.Body.String())
+	}
+	if strings.Contains(response.Body.String(), "developmentCode") {
+		t.Fatalf("production-style response exposed a development code: %s", response.Body.String())
+	}
+	if err := server.deliverNextAuthEmail(context.Background()); err != nil {
+		t.Fatalf("deliver outbox email: %v", err)
+	}
+	select {
+	case message := <-relay.message:
+		if !strings.Contains(message, "To: "+email+"\r\n") {
+			t.Fatalf("delivered message missing synthetic recipient: %q", message)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("outbox worker did not deliver the queued message")
+	}
+	var status string
+	var attempts int
+	var payloadCleared bool
+	err = db.QueryRow(`SELECT o.status,o.attempts,o.payload_ciphertext IS NULL
+		FROM auth_email_outbox o
+		JOIN auth_challenges c ON c.id=o.challenge_id
+		JOIN users u ON u.id=c.user_id
+		WHERE u.email_normalized=$1
+		ORDER BY o.created_at DESC LIMIT 1`, email).Scan(&status, &attempts, &payloadCleared)
+	if err != nil {
+		t.Fatalf("query delivered outbox row: %v", err)
+	}
+	if status != "delivered" || attempts != 1 || !payloadCleared {
+		t.Fatalf("outbox status=%q attempts=%d payloadCleared=%v, want delivered/1/true", status, attempts, payloadCleared)
+	}
+}
+
+func TestPhase3AuthEmailOutboxRetriesTransientSMTPFailure(t *testing.T) {
+	db := phase3TestDB(t)
+	failingRelay := startTestSMTPRelay(t, false, false)
+	workingRelay := startTestSMTPRelay(t, true, false)
+	email := "outbox-retry-" + strings.ReplaceAll(newUUID(), "-", "") + "@example.test"
+	server := &Server{
+		db: db,
+		config: Config{
+			AuthOTPPepper:            bytes.Repeat([]byte("p"), 32),
+			EmailOutboxEncryptionKey: bytes.Repeat([]byte("k"), 32),
+			SMTPAddress:              failingRelay.address,
+			SMTPFrom:                 "signin@example.test",
+		},
+		logger:   slog.New(slog.NewTextHandler(io.Discard, nil)),
+		limit:    newRateLimiter(),
+		smtpDial: failingRelay.dial,
+	}
+	body, err := json.Marshal(map[string]string{"email": email})
+	if err != nil {
+		t.Fatal(err)
+	}
+	response := httptest.NewRecorder()
+	server.requestChallenge(response, httptest.NewRequest(http.MethodPost, "/api/v1/auth/challenges", bytes.NewReader(body)))
+	if response.Code != http.StatusAccepted {
+		t.Fatalf("request challenge status=%d body=%s, want 202", response.Code, response.Body.String())
+	}
+	if err := server.deliverNextAuthEmail(context.Background()); err != nil {
+		t.Fatalf("record transient delivery failure: %v", err)
+	}
+	_, err = db.Exec(`UPDATE auth_email_outbox
+		SET available_at=now()
+		WHERE challenge_id=(SELECT c.id FROM auth_challenges c JOIN users u ON u.id=c.user_id WHERE u.email_normalized=$1)`, email)
+	if err != nil {
+		t.Fatalf("make retry immediately available: %v", err)
+	}
+	server.config.SMTPRootCAs = workingRelay.roots
+	server.smtpDial = workingRelay.dial
+	if err := server.deliverNextAuthEmail(context.Background()); err != nil {
+		t.Fatalf("deliver retried email: %v", err)
+	}
+	select {
+	case message := <-workingRelay.message:
+		if !strings.Contains(message, "To: "+email+"\r\n") {
+			t.Fatalf("retried message missing synthetic recipient: %q", message)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("outbox retry did not deliver the queued message")
+	}
+	var status string
+	var attempts int
+	var payloadCleared bool
+	err = db.QueryRow(`SELECT o.status,o.attempts,o.payload_ciphertext IS NULL
+		FROM auth_email_outbox o
+		JOIN auth_challenges c ON c.id=o.challenge_id
+		JOIN users u ON u.id=c.user_id
+		WHERE u.email_normalized=$1
+		ORDER BY o.created_at DESC LIMIT 1`, email).Scan(&status, &attempts, &payloadCleared)
+	if err != nil {
+		t.Fatalf("query retried outbox row: %v", err)
+	}
+	if status != "delivered" || attempts != 2 || !payloadCleared {
+		t.Fatalf("outbox status=%q attempts=%d payloadCleared=%v, want delivered/2/true", status, attempts, payloadCleared)
+	}
+}

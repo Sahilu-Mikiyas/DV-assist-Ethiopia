@@ -8,6 +8,7 @@
 | OTP digest, expiry, attempt count | Verify email sign-in | API only | PostgreSQL; HMAC digest uses `AUTH_OTP_PEPPER` |
 | Session and CSRF token digests | Authenticate requests and enforce CSRF | API only | PostgreSQL; browser receives opaque cookies |
 | TOTP secret ciphertext and MFA state | Require MFA for privileged roles | API decrypts with dedicated key; owner uses authenticator | PostgreSQL encrypted with AES-GCM and `MFA_ENCRYPTION_KEY_B64` |
+| Queued email recipient and sign-in code | Deliver an active challenge asynchronously | API worker only | PostgreSQL AES-GCM ciphertext using separate `MAIL_OUTBOX_ENCRYPTION_KEY_B64`; ciphertext cleared after delivery or terminal failure |
 | Role grants | Authorize applicant, staff, and administrator workflows | API; admins can manage other users | PostgreSQL |
 | Case cycle key, status, owner, staff assignment, revision | Track preparation workflow shell | Owner, assigned staff, or administrator per matrix | PostgreSQL |
 | Case events and audit events | Explain sensitive access and changes | Case participants; audit is server-side | PostgreSQL append-only triggers |
@@ -35,12 +36,12 @@ All ownership and role rules are enforced in the API. Hiding a UI control is not
 
 - The CI PostgreSQL integration job exercises applicant ownership, staff assignment scoping and MFA gating, case-read audit outcomes, concurrent status revisions, and logout revocation. Those checks require the disposable PostgreSQL service; a local `go test ./...` without `DATABASE_URL` reports the integration tests as skipped.
 
-- Passwordless challenge codes: 10-minute expiry, bounded attempts, HMAC digest, generic response, and process-local IP/email rate limit.
+- Passwordless challenge codes: 10-minute expiry, bounded attempts, HMAC digest, generic response, and PostgreSQL-shared IP/email rate limits (in-memory fallback is development-only).
 - Sessions: opaque random token stored only as a digest, `HttpOnly` cookie, expiry, CSRF cookie/header pair, origin check, and logout revocation.
 - Staff/admin access requires TOTP MFA. TOTP secrets are encrypted at rest with a separate 32-byte key. Current recovery is admin reset; there are no backup codes.
 - Sensitive state changes and case views create append-only case/audit records. PostgreSQL's table owner can bypass triggers; production should use separate migration and runtime roles, and runtime must not own tables.
 - The API's in-memory limiter is per process and resets at restart. It is not sufficient for a multi-instance public deployment.
-- Email delivery uses SMTP with STARTTLS; production startup requires database, HTTPS public origin, and valid SMTP configuration. Delivery retry/outbox and monitoring are not implemented.
-- When configured SMTP delivery fails, the API keeps the anti-enumeration response and revokes that challenge so it cannot be used without a delivered code. Delivery outcome after the message body is accepted can be uncertain; the applicant may need to request a fresh code.
+- Email delivery uses SMTP with STARTTLS; production startup requires database, HTTPS public origin, valid SMTP configuration, and the separately managed outbox encryption key.
+- The PostgreSQL outbox queues recipient/code ciphertext in the challenge transaction, uses short leases across API replicas, and retries SMTP failures up to five attempts with bounded backoff. Successful and terminal rows have their ciphertext cleared; terminal failure also revokes the challenge. Delivery is at-least-once, so a crash after SMTP acceptance can produce a duplicate email.
 - `GET /healthz` is a process health check, not a dependency readiness check.
 - Phase 3 does not meet a real-data launch gate until PostgreSQL integration, restore, access-isolation, MFA, privacy, retention, and operational checks are completed.

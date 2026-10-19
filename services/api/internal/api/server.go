@@ -22,18 +22,19 @@ import (
 )
 
 type Config struct {
-	AppEnv            string
-	AuthOTPPepper     []byte
-	MFAEncryptionKey  []byte
-	SMTPAddress       string
-	SMTPUsername      string
-	SMTPPassword      string
-	SMTPFrom          string
-	SMTPRootCAs       *x509.CertPool
-	TrustedProxyCIDRs []netip.Prefix
-	PublicOrigin      string
-	SecureCookies     bool
-	DevelopmentCode   bool
+	AppEnv                   string
+	AuthOTPPepper            []byte
+	MFAEncryptionKey         []byte
+	SMTPAddress              string
+	SMTPUsername             string
+	SMTPPassword             string
+	SMTPFrom                 string
+	SMTPRootCAs              *x509.CertPool
+	EmailOutboxEncryptionKey []byte
+	TrustedProxyCIDRs        []netip.Prefix
+	PublicOrigin             string
+	SecureCookies            bool
+	DevelopmentCode          bool
 }
 
 type Server struct {
@@ -67,6 +68,9 @@ func New(db *sql.DB, config Config, logger *slog.Logger) http.Handler {
 		logger = slog.Default()
 	}
 	s := &Server{db: db, config: config, logger: logger, limit: newRateLimiter()}
+	if db != nil && config.SMTPAddress != "" && len(config.EmailOutboxEncryptionKey) == 32 {
+		go s.runEmailOutboxWorker()
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.health)
 	mux.HandleFunc("GET /api/v1/demo/cases", s.demoCases)
