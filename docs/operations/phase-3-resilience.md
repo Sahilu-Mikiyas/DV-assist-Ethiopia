@@ -58,6 +58,10 @@ The current sign-in challenge limiter is process-local, in-memory, and resets wh
 
 Until a shared limiter and trusted-proxy configuration are implemented and reviewed, deploy at most one API process behind a correctly configured HTTPS edge. Do not trust arbitrary forwarded-IP headers. Before increasing replicas, choose and test a shared limiter (for example, a managed Redis service), ensure edge IP handling is restricted to known proxies, and verify rate limits still hold across restarts and concurrent instances.
 
+## CI rehearsal boundary
+
+The `phase3-operations-smoke` GitHub Actions job applies migrations to a disposable PostgreSQL 17 database, provisions the runtime and backup roles, checks their privileges, runs the API integration suite as the non-owner runtime login, and dumps/restores synthetic rows into a fresh database. This verifies the repository role script and basic PostgreSQL restore mechanics. The disposable CI dump is not an encrypted off-site backup and does not establish production retention, RPO/RTO, access ownership, SMTP delivery, or incident response.
+
 ## Readiness evidence and limits
 
 Record dates, environment, operator, sanitized results, and follow-up items for each rehearsal. The Phase 3 gate remains open until backup restore, role isolation, SMTP failure behavior, rate limits in the actual deployment topology, privacy/retention policy, and incident ownership have been demonstrated and approved. These instructions do not authorize real applicant intake, payment collection, official submission, or confirmation-number storage.
