@@ -63,6 +63,12 @@ stop_instance() {
   local pid="$1"
   kill "$pid" 2>/dev/null || true
   wait "$pid" 2>/dev/null || true
+  local index
+  for index in "${!pids[@]}"; do
+    if [[ "${pids[$index]}" == "$pid" ]]; then
+      unset 'pids[index]'
+    fi
+  done
 }
 
 post_challenge() {
