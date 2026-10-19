@@ -34,7 +34,7 @@
 
 - Authentication rate limits are shared through PostgreSQL fixed-window counters. Without a database, the development-only path uses an in-memory limiter. PostgreSQL failures fail closed for sign-in challenge/verification requests.
 - `X-Forwarded-For` is ignored unless the direct TCP peer matches a configured `TRUSTED_PROXY_CIDRS` prefix. The edge proxy must append the actual connecting client address, and direct API ingress must be blocked when a proxy is expected.
-- SMTP, PostgreSQL backups, access review, retention/deletion windows, account deletion, incident response, and production hosting still need operational decisions. The current schema/API is a development foundation, not authorization to open public intake.
+- SMTP, outbox-key management/rotation, PostgreSQL backups, access review, retention/deletion windows, account deletion, incident response, and production hosting still need operational decisions. The current schema/API is a development foundation, not authorization to open public intake.
 - Do not use the loopback development-code mode outside an isolated local environment. Production requires HTTPS origin configuration, SMTP delivery, `AUTH_OTP_PEPPER`, and a separately managed `MFA_ENCRYPTION_KEY_B64`.
 
 ## Consequences
