@@ -31,7 +31,7 @@ GRANT USAGE ON SCHEMA public TO dvassist_runtime, dvassist_backup;
 
 -- API tables: current handlers only need read, insert, and update access.
 GRANT SELECT, INSERT, UPDATE ON TABLE
-    users, auth_challenges, sessions, role_grants, cases, auth_rate_limits
+    users, auth_challenges, sessions, role_grants, cases, auth_rate_limits, auth_email_outbox
 TO dvassist_runtime;
 
 -- Append-only audit/event rows may be read and inserted, never changed or removed.
