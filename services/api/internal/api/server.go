@@ -12,8 +12,10 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"net/netip"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"database/sql"
@@ -28,6 +30,7 @@ type Config struct {
 	SMTPPassword     string
 	SMTPFrom         string
 	SMTPRootCAs      *x509.CertPool
+	TrustedProxyCIDRs []netip.Prefix
 	PublicOrigin     string
 	SecureCookies    bool
 	DevelopmentCode  bool
@@ -38,7 +41,8 @@ type Server struct {
 	config   Config
 	logger   *slog.Logger
 	limit    *rateLimiter
-	smtpDial func(network, address string) (net.Conn, error)
+	smtpDial          func(network, address string) (net.Conn, error)
+	rateCleanupCounter atomic.Uint64
 }
 
 type contextKey string
