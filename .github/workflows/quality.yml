@@ -1,1 +1,135 @@
-name: Quality checks`n`non:`n  push:`n  pull_request:`n  workflow_dispatch:`n`npermissions:`n  contents: read`n`njobs:`n  app-quality:`n    name: Validate cycle config and build React app`n    runs-on: ubuntu-latest`n    steps:`n      - name: Check out repository`n        uses: actions/checkout@v7`n`n      - name: Set up Node.js`n        uses: actions/setup-node@v7`n        with:`n          node-version: 24`n          cache: npm`n          cache-dependency-path: apps/app/package-lock.json`n`n      - name: Validate versioned cycle config`n        run: node scripts/validate-cycle-config.mjs`n`n      - name: Install frontend dependencies`n        working-directory: apps/app`n        run: npm ci`n`n      - name: Build and lint React app`n        working-directory: apps/app`n        run: |`n          npm run build`n          npm run lint`n`n  go-quality:`n    name: Format, vet, and build Go API`n    runs-on: ubuntu-latest`n    steps:`n      - name: Check out repository`n        uses: actions/checkout@v7`n`n      - name: Set up Go`n        uses: actions/setup-go@v7`n        with:`n          go-version-file: services/api/go.mod`n          cache-dependency-path: services/api/go.mod`n`n      - name: Check formatting, vet, and build`n        shell: pwsh`n        run: ./scripts/check-go.ps1`n`n  migration-smoke:`n    name: Apply and roll back PostgreSQL schema`n    runs-on: ubuntu-latest`n    env:`n      DATABASE_URL: postgres://dvassist_dev:local-only-change-me@localhost:5432/ethio_dv_assist?sslmode=disable`n    services:`n      postgres:`n        image: postgres:17-alpine`n        env:`n          POSTGRES_DB: ethio_dv_assist`n          POSTGRES_USER: dvassist_dev`n          POSTGRES_PASSWORD: local-only-change-me`n        ports:`n          - 5432:5432`n        options: >-`n          --health-cmd "pg_isready -U dvassist_dev -d ethio_dv_assist"`n          --health-interval 5s`n          --health-timeout 3s`n          --health-retries 12`n    steps:`n      - name: Check out repository`n        uses: actions/checkout@v7`n`n      - name: Set up Go`n        uses: actions/setup-go@v7`n        with:`n          go-version-file: services/api/go.mod`n`n      - name: Install pinned golang-migrate CLI`n        run: |`n          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.20.1`n          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"`n`n      - name: Apply, roll back, and reapply migrations`n        run: |`n          migrate -source "file://$GITHUB_WORKSPACE/db/migrations" -database "$DATABASE_URL" up`n          migrate -source "file://$GITHUB_WORKSPACE/db/migrations" -database "$DATABASE_URL" down 1`n          migrate -source "file://$GITHUB_WORKSPACE/db/migrations" -database "$DATABASE_URL" up`n          migrate -source "file://$GITHUB_WORKSPACE/db/migrations" -database "$DATABASE_URL" version`n`n  phase3-integration:`n    name: Verify Phase 3 API authorization against PostgreSQL`n    runs-on: ubuntu-latest`n    env:`n      DATABASE_URL: postgres://dvassist_dev:local-only-change-me@localhost:5432/ethio_dv_assist?sslmode=disable`n    services:`n      postgres:`n        image: postgres:17-alpine`n        env:`n          POSTGRES_DB: ethio_dv_assist`n          POSTGRES_USER: dvassist_dev`n          POSTGRES_PASSWORD: local-only-change-me`n        ports:`n          - 5432:5432`n        options: >-`n          --health-cmd "pg_isready -U dvassist_dev -d ethio_dv_assist"`n          --health-interval 5s`n          --health-timeout 3s`n          --health-retries 12`n    steps:`n      - name: Check out repository`n        uses: actions/checkout@v7`n`n      - name: Set up Go`n        uses: actions/setup-go@v7`n        with:`n          go-version-file: services/api/go.mod`n          cache-dependency-path: services/api/go.mod`n`n      - name: Install pinned golang-migrate CLI`n        run: |`n          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.20.1`n          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"`n`n      - name: Apply database migrations`n        run: migrate -source "file://$GITHUB_WORKSPACE/db/migrations" -database "$DATABASE_URL" up`n`n      - name: Run Phase 3 PostgreSQL integration checks`n        working-directory: services/api`n        run: go test -race -count=1 ./...`n
+name: Quality checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  app-quality:
+    name: Validate cycle config and build React app
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/app/package-lock.json
+
+      - name: Validate versioned cycle config
+        run: node scripts/validate-cycle-config.mjs
+
+      - name: Install frontend dependencies
+        working-directory: apps/app
+        run: npm ci
+
+      - name: Build and lint React app
+        working-directory: apps/app
+        run: |
+          npm run build
+          npm run lint
+
+  go-quality:
+    name: Format, vet, and build Go API
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: services/api/go.mod
+          cache-dependency-path: services/api/go.mod
+
+      - name: Check formatting, vet, and build
+        shell: pwsh
+        run: ./scripts/check-go.ps1
+
+  migration-smoke:
+    name: Apply and roll back PostgreSQL schema
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://dvassist_dev:local-only-change-me@localhost:5432/ethio_dv_assist?sslmode=disable
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: ethio_dv_assist
+          POSTGRES_USER: dvassist_dev
+          POSTGRES_PASSWORD: local-only-change-me
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dvassist_dev -d ethio_dv_assist"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: services/api/go.mod
+
+      - name: Install pinned golang-migrate CLI
+        run: |
+          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.20.1
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Apply, roll back, and reapply migrations
+        run: |
+          migrate -source "file://$GITHUB_WORKSPACE/db/migrations" -database "$DATABASE_URL" up
+          migrate -source "file://$GITHUB_WORKSPACE/db/migrations" -database "$DATABASE_URL" down 1
+          migrate -source "file://$GITHUB_WORKSPACE/db/migrations" -database "$DATABASE_URL" up
+          migrate -source "file://$GITHUB_WORKSPACE/db/migrations" -database "$DATABASE_URL" version
+
+  phase3-integration:
+    name: Verify Phase 3 API authorization against PostgreSQL
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://dvassist_dev:local-only-change-me@localhost:5432/ethio_dv_assist?sslmode=disable
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: ethio_dv_assist
+          POSTGRES_USER: dvassist_dev
+          POSTGRES_PASSWORD: local-only-change-me
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dvassist_dev -d ethio_dv_assist"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: services/api/go.mod
+          cache-dependency-path: services/api/go.mod
+
+      - name: Install pinned golang-migrate CLI
+        run: |
+          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.20.1
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Apply database migrations
+        run: migrate -source "file://$GITHUB_WORKSPACE/db/migrations" -database "$DATABASE_URL" up
+
+      - name: Run Phase 3 PostgreSQL integration checks
+        working-directory: services/api
+        run: go test -race -count=1 ./...
