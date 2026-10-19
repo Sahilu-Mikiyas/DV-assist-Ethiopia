@@ -66,7 +66,9 @@ The `phase3-operations-smoke` GitHub Actions job applies migrations to a disposa
 
 ## Automated proxy and replica checks
 
-The PostgreSQL-backed API integration suite creates independent server instances over one database and verifies that a synthetic rate-limit counter is shared across them, including a fresh instance standing in for a restart. Unit coverage checks that the forwarded chain is used only for a trusted direct peer, and that an untrusted peer or malformed chain falls back to the socket peer. These checks use synthetic values only. They do not validate the deployed ingress CIDRs, network isolation, or behavior of two live API processes, so complete the staging rehearsal above before scaling replicas.
+The PostgreSQL-backed API integration suite creates independent server instances over one database and verifies that a synthetic rate-limit counter is shared across them, including a fresh instance standing in for a restart. Unit coverage checks that the forwarded chain is used only for a trusted direct peer, and that an untrusted peer or malformed chain falls back to the socket peer.
+
+The `scripts/phase3-process-rehearsal.sh` CI step builds and launches two actual API processes against the disposable PostgreSQL database. It alternates synthetic challenge requests between them, restarts one process, and checks counter persistence. It also exercises trusted and untrusted forwarded-header behavior using loopback-only synthetic proxy CIDRs and documentation-only IP addresses. The script runs in development mode so codes are never delivered to a real mailbox. It does not validate production secrets, an external ingress, real network isolation, or deployed proxy CIDRs. Complete the operator staging rehearsal above before scaling replicas.
 
 ## Readiness evidence and limits
 

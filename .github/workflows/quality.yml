@@ -133,6 +133,12 @@ jobs:
       - name: Run Phase 3 PostgreSQL integration checks
         working-directory: services/api
         run: go test -race -count=1 ./...
+      - name: Rehearse rate limits across live API processes
+        working-directory: services/api
+        env:
+          AUTH_OTP_PEPPER: synthetic-phase3-process-rehearsal-pepper-only
+          MFA_ENCRYPTION_KEY_B64: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+        run: bash ../../scripts/phase3-process-rehearsal.sh
   phase3-operations-smoke:
     name: Verify Phase 3 least-privilege access and database restore
     runs-on: ubuntu-latest
