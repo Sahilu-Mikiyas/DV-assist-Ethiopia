@@ -63,6 +63,7 @@ There are no user-held backup codes in this phase. After verifying the requester
 
 ## Before accepting real cases
 
+- CI runs `go test -race -count=1 ./...` against a disposable PostgreSQL database after applying migrations. The integration tests cover owner-versus-other-applicant reads, assigned-versus-unassigned staff, staff MFA gating, case-read audit outcomes, concurrent revision conflicts, and logout revocation. Local runs skip these database tests when `DATABASE_URL` is not set; a passing local build is not evidence that the integration cases ran.
 - Run migration and rollback/restore checks on disposable PostgreSQL, then perform two-account ownership checks, assigned/unassigned staff checks, MFA challenge/replay/rate-limit checks, logout, stale revision, admin bootstrap and last-admin tests.
 - Add email outbox/retry monitoring and a production-grade distributed rate limiter before multi-instance production deployment. The current rate limiter is process-local.
 - Configure HTTPS termination, secure cookies, database backups and restore, least-privilege runtime DB grants, SMTP STARTTLS credentials, monitoring, alerts, and an incident contact.

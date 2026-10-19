@@ -153,7 +153,7 @@ An applicant can understand the service boundary, indicative price, preview stat
 
 ## Phase 3 — Identity, roles, and case foundation
 
-**Current implementation status (October 17, 2026):** The Go API and React portal now include passwordless email-code sign-in, database-backed sessions and CSRF protection, applicant case creation/list/detail/timeline, staff queue/assignment/status transitions, administrator role management and MFA reset, TOTP enrollment for privileged users, audit records, and the initial PostgreSQL migration. Local Go/web checks pass. The migration has not been run against PostgreSQL in this environment, and the end-to-end database-backed exit gate remains unverified. Do not enter real applicant data or accept payments yet.
+**Current implementation status (October 19, 2026):** The Go API and React portal include passwordless email-code sign-in, database-backed sessions and CSRF protection, applicant case creation/list/detail/timeline, staff queue/assignment/status transitions, administrator role management and MFA reset, TOTP enrollment for privileged users, audit records, and the initial PostgreSQL migration. CI now includes a disposable-PostgreSQL API integration job covering applicant ownership, staff assignment/MFA, audit outcomes, concurrent case revisions, and logout revocation. Local `go test ./...` passes, but PostgreSQL-backed tests skip without `DATABASE_URL`; their first non-skipped result must come from CI. Backup/restore, SMTP delivery/failure behavior, production role separation, and broader MFA/rate-limit checks remain open. Do not enter real applicant data or accept payments yet.
 
 ### Goal
 
@@ -520,4 +520,4 @@ Every phase that changes software should include, as applicable:
 
 ## Immediate next step
 
-Run the Phase 3 migration on a disposable PostgreSQL database and complete the cross-account, role/assignment, MFA, audit, logout, and concurrency checks. Then begin Phase 4's versioned DV form schema and preparation wizard after verifying the applicable cycle's official requirements. Keep real applicant intake, payment collection, official submission, and confirmation storage disabled until their separate gates are met.
+Run the new Phase 3 PostgreSQL integration job and inspect its first non-skipped CI result. Fix any failures, then complete the remaining operational checks: backup/restore, SMTP delivery/failure behavior, rate limits under deployment topology, and least-privilege runtime database access. Only after the Phase 3 and policy exit gates pass should Phase 4's versioned DV form schema and preparation wizard proceed. Keep real applicant intake, payment collection, official submission, and confirmation storage disabled until their separate gates are met.
