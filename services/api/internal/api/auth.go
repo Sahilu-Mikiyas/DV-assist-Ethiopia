@@ -129,6 +129,14 @@ func (s *Server) requestChallenge(w http.ResponseWriter, r *http.Request) {
 		} else if err := s.sendCode(email, code); err != nil {
 			// Do not include the address or code in logs. The response remains anti-enumerating.
 			s.logger.Error("deliver auth challenge", "request_id", requestID(r), "reason", "internal_failure")
+			// A code that could not be delivered must not remain usable. If delivery
+			// outcome is uncertain, the applicant can request a fresh challenge.
+			cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 2*time.Second)
+			_, cleanupErr := s.db.ExecContext(cleanupCtx, `UPDATE auth_challenges SET consumed_at=now() WHERE id=$1::uuid AND consumed_at IS NULL`, challengeID)
+			cleanupCancel()
+			if cleanupErr != nil {
+				s.logger.Error("revoke undelivered auth challenge", "request_id", requestID(r), "reason", "internal_failure")
+			}
 		}
 	}
 	writeJSON(w, http.StatusAccepted, response)

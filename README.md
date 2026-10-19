@@ -19,6 +19,7 @@ Applicant preparation and review assistance for Ethiopian applicants considering
 - [OpenAPI contract](packages/api-contract/openapi.yaml)
 - [Database migration conventions](db/migrations/README.md)
 - [Phase 3 operations guide](docs/operations/phase-3-identity-and-cases.md)
+- [Phase 3 resilience runbook](docs/operations/phase-3-resilience.md)
 - [Phase 3 access and data notes](docs/security/phase-3-access-and-data.md)
 - [Phase 3 architecture decision](docs/decisions/0003-phase-3-identity-cases.md)
 - [Phase 4 form schema operations note](docs/operations/phase-4-form-schema.md)
