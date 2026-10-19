@@ -16,10 +16,11 @@
    $pepperBytes = New-Object byte[] 48
    [System.Security.Cryptography.RandomNumberGenerator]::Fill($pepperBytes)
    $env:AUTH_OTP_PEPPER = [Convert]::ToBase64String($pepperBytes)
-   # Generate this separate key only when SMTP delivery is configured.
-   $outboxBytes = New-Object byte[] 32
-   [System.Security.Cryptography.RandomNumberGenerator]::Fill($outboxBytes)
-   $env:MAIL_OUTBOX_ENCRYPTION_KEY_B64 = [Convert]::ToBase64String($outboxBytes)
+   if ($env:SMTP_ADDR) {
+     $outboxBytes = New-Object byte[] 32
+     [System.Security.Cryptography.RandomNumberGenerator]::Fill($outboxBytes)
+     $env:MAIL_OUTBOX_ENCRYPTION_KEY_B64 = [Convert]::ToBase64String($outboxBytes)
+   }
    ```
 
 5. Apply migrations, then run `go run ./cmd/api` from `services/api` with `APP_ENV=development`. Development codes are returned only when the API binds to a loopback address.
