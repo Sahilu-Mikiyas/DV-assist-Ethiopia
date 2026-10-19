@@ -195,8 +195,8 @@ func TestPhase3ConcurrentRevisionAndLogoutRevocation(t *testing.T) {
 	}
 
 	logout := phase3Request(t, handler, staff, http.MethodPost, "/api/v1/logout", nil)
-	if logout.Code != http.StatusNoContent {
-		t.Fatalf("logout status = %d, want 204", logout.Code)
+	if logout.Code != http.StatusOK {
+		t.Fatalf("logout status = %d, want 200", logout.Code)
 	}
 	if got := phase3Request(t, handler, staff, http.MethodGet, "/api/v1/session", nil).Code; got != http.StatusUnauthorized {
 		t.Fatalf("session after logout status = %d, want 401", got)
