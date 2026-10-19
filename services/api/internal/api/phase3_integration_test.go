@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"os"
 	"strings"
 	"sync"
@@ -212,5 +213,56 @@ func TestPhase3MigrationIsAvailable(t *testing.T) {
 	}
 	if !users || !cases || !auditEvents {
 		t.Fatalf("expected Phase 3 tables, got users=%v cases=%v audit_events=%v", users, cases, auditEvents)
+	}
+}
+
+func TestPhase3AuthRateLimitsAreSharedAcrossInstancesAndRestart(t *testing.T) {
+	db := phase3TestDB(t)
+	config := Config{AuthOTPPepper: bytes.Repeat([]byte("r"), 32)}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	first := &Server{db: db, config: config, logger: logger, limit: newRateLimiter()}
+	second := &Server{db: db, config: config, logger: logger, limit: newRateLimiter()}
+	restarted := &Server{db: db, config: config, logger: logger, limit: newRateLimiter()}
+	key := first.limitKey("integration", newUUID())
+
+	for index, server := range []*Server{first, second} {
+		allowed, err := server.allowRateLimit(context.Background(), key, 2, time.Hour)
+		if err != nil || !allowed {
+			t.Fatalf("request %d allowed=%v err=%v, want allowed", index+1, allowed, err)
+		}
+	}
+	allowed, err := restarted.allowRateLimit(context.Background(), key, 2, time.Hour)
+	if err != nil {
+		t.Fatalf("third request error = %v", err)
+	}
+	if allowed {
+		t.Fatal("third request was allowed after two requests across separate instances")
+	}
+}
+
+func TestClientIPUsesForwardedChainOnlyForTrustedPeers(t *testing.T) {
+	server := &Server{config: Config{TrustedProxyCIDRs: []netip.Prefix{
+		netip.MustParsePrefix("10.20.0.0/16"),
+	}}}
+
+	trustedRequest := httptest.NewRequest(http.MethodGet, "/", nil)
+	trustedRequest.RemoteAddr = "10.20.1.7:443"
+	trustedRequest.Header.Set("X-Forwarded-For", "198.51.100.44, 10.20.0.8")
+	if got := server.clientIP(trustedRequest); got != "198.51.100.44" {
+		t.Fatalf("trusted proxy clientIP() = %q, want 198.51.100.44", got)
+	}
+
+	untrustedRequest := httptest.NewRequest(http.MethodGet, "/", nil)
+	untrustedRequest.RemoteAddr = "203.0.113.9:443"
+	untrustedRequest.Header.Set("X-Forwarded-For", "198.51.100.44")
+	if got := server.clientIP(untrustedRequest); got != "203.0.113.9" {
+		t.Fatalf("untrusted proxy clientIP() = %q, want direct peer 203.0.113.9", got)
+	}
+
+	malformedRequest := httptest.NewRequest(http.MethodGet, "/", nil)
+	malformedRequest.RemoteAddr = "10.20.1.7:443"
+	malformedRequest.Header.Set("X-Forwarded-For", "198.51.100.44, not-an-ip")
+	if got := server.clientIP(malformedRequest); got != "10.20.1.7" {
+		t.Fatalf("malformed forwarded chain clientIP() = %q, want direct peer 10.20.1.7", got)
 	}
 }
