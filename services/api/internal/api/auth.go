@@ -19,6 +19,7 @@ import (
 	"net"
 	"net/http"
 	"net/mail"
+	"net/netip"
 	"net/smtp"
 	"net/url"
 	"strings"
@@ -77,7 +78,23 @@ func (s *Server) requestChallenge(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_email", "Enter a valid email address.")
 		return
 	}
-	if !s.limit.allow(s.limitKey("ip", clientIP(r)), 8, 15*time.Minute) || !s.limit.allow(s.limitKey("email", normalized), 4, time.Hour) {
+	allowed, err := s.allowRateLimit(r.Context(), s.limitKey("ip", s.clientIP(r)), 8, 15*time.Minute)
+	if err != nil {
+		s.logger.Error("apply auth challenge rate limit", "request_id", requestID(r), "reason", "internal_failure")
+		writeError(w, http.StatusServiceUnavailable, "request_unavailable", "Sign-in is temporarily unavailable. Try again shortly.")
+		return
+	}
+	if !allowed {
+		writeError(w, http.StatusTooManyRequests, "try_later", "Please wait before requesting another sign-in code.")
+		return
+	}
+	allowed, err = s.allowRateLimit(r.Context(), s.limitKey("email", normalized), 4, time.Hour)
+	if err != nil {
+		s.logger.Error("apply auth challenge rate limit", "request_id", requestID(r), "reason", "internal_failure")
+		writeError(w, http.StatusServiceUnavailable, "request_unavailable", "Sign-in is temporarily unavailable. Try again shortly.")
+		return
+	}
+	if !allowed {
 		writeError(w, http.StatusTooManyRequests, "try_later", "Please wait before requesting another sign-in code.")
 		return
 	}
@@ -159,7 +176,23 @@ func (s *Server) verifyChallenge(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "invalid_code", "The code is invalid or expired. Request another code and try again.")
 		return
 	}
-	if !s.limit.allow(s.limitKey("verify-ip", clientIP(r)), 20, 15*time.Minute) || !s.limit.allow(s.limitKey("verify-email", normalized), 10, 15*time.Minute) {
+	allowed, err := s.allowRateLimit(r.Context(), s.limitKey("verify-ip", s.clientIP(r)), 20, 15*time.Minute)
+	if err != nil {
+		s.logger.Error("apply verification rate limit", "request_id", requestID(r), "reason", "internal_failure")
+		writeError(w, http.StatusServiceUnavailable, "request_unavailable", "Sign-in is temporarily unavailable. Try again shortly.")
+		return
+	}
+	if !allowed {
+		writeError(w, http.StatusTooManyRequests, "try_later", "Please wait before trying another code.")
+		return
+	}
+	allowed, err = s.allowRateLimit(r.Context(), s.limitKey("verify-email", normalized), 10, 15*time.Minute)
+	if err != nil {
+		s.logger.Error("apply verification rate limit", "request_id", requestID(r), "reason", "internal_failure")
+		writeError(w, http.StatusServiceUnavailable, "request_unavailable", "Sign-in is temporarily unavailable. Try again shortly.")
+		return
+	}
+	if !allowed {
 		writeError(w, http.StatusTooManyRequests, "try_later", "Please wait before trying another code.")
 		return
 	}
@@ -600,11 +633,93 @@ func tokenDigest(token string) []byte {
 
 func constantTimeEqual(left, right string) bool { return hmac.Equal([]byte(left), []byte(right)) }
 
-func clientIP(r *http.Request) string {
-	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
-		return host
+func (s *Server) clientIP(r *http.Request) string {
+	peer, err := remoteAddr(r.RemoteAddr)
+	if err != nil {
+		return "unknown"
 	}
-	return r.RemoteAddr
+	if !trustedProxy(peer, s.config.TrustedProxyCIDRs) {
+		return peer.String()
+	}
+	values := r.Header.Values("X-Forwarded-For")
+	if len(values) == 0 {
+		return peer.String()
+	}
+	var chain []netip.Addr
+	for _, value := range values {
+		for _, item := range strings.Split(value, ",") {
+			address, parseErr := netip.ParseAddr(strings.TrimSpace(item))
+			if parseErr != nil {
+				return peer.String()
+			}
+			chain = append(chain, address.Unmap())
+		}
+	}
+	for i := len(chain) - 1; i >= 0; i-- {
+		if !trustedProxy(chain[i], s.config.TrustedProxyCIDRs) {
+			return chain[i].String()
+		}
+	}
+	return peer.String()
+}
+
+func remoteAddr(value string) (netip.Addr, error) {
+	host, _, err := net.SplitHostPort(value)
+	if err == nil {
+		value = host
+	}
+	address, err := netip.ParseAddr(value)
+	if err != nil {
+		return netip.Addr{}, err
+	}
+	return address.Unmap(), nil
+}
+
+func trustedProxy(address netip.Addr, prefixes []netip.Prefix) bool {
+	for _, prefix := range prefixes {
+		if prefix.Contains(address) {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Server) allowRateLimit(ctx context.Context, key string, maximum int, window time.Duration) (bool, error) {
+	if s.db == nil {
+		return s.limit.allow(key, maximum, window), nil
+	}
+	queryCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	var allowed bool
+	err := s.db.QueryRowContext(queryCtx, `
+		INSERT INTO auth_rate_limits(rate_key, window_started_at, request_count)
+		VALUES ($1, statement_timestamp(), 1)
+		ON CONFLICT (rate_key) DO UPDATE SET
+			window_started_at = CASE
+				WHEN auth_rate_limits.window_started_at <= statement_timestamp() - ($3::bigint * interval '1 millisecond')
+				THEN statement_timestamp() ELSE auth_rate_limits.window_started_at END,
+			request_count = CASE
+				WHEN auth_rate_limits.window_started_at <= statement_timestamp() - ($3::bigint * interval '1 millisecond')
+				THEN 1 ELSE auth_rate_limits.request_count + 1 END
+		RETURNING request_count <= $2`, key, maximum, window.Milliseconds()).Scan(&allowed)
+	if err != nil {
+		return false, err
+	}
+	if s.rateCleanupCounter.Add(1)%256 == 0 {
+		cleanupCtx, cleanupCancel := context.WithTimeout(ctx, time.Second)
+		_, cleanupErr := s.db.ExecContext(cleanupCtx, `
+			DELETE FROM auth_rate_limits
+			WHERE rate_key IN (
+				SELECT rate_key FROM auth_rate_limits
+				WHERE window_started_at < statement_timestamp() - interval '24 hours'
+				LIMIT 500
+			)`)
+		cleanupCancel()
+		if cleanupErr != nil {
+			s.logger.Warn("clean expired auth rate limits", "reason", "database_cleanup_failed")
+		}
+	}
+	return allowed, nil
 }
 
 func (s *Server) mfaEncryptionKey() []byte {

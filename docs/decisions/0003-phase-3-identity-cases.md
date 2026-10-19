@@ -31,7 +31,8 @@
 
 ## Security and launch limits
 
-- The in-memory authentication rate limiter is suitable only for one API instance. Before horizontal scaling or public launch, replace it with a shared limiter and place the service behind a trusted proxy with correctly configured client IP handling.
+- Authentication rate limits are shared through PostgreSQL fixed-window counters. Without a database, the development-only path uses an in-memory limiter. PostgreSQL failures fail closed for sign-in challenge/verification requests.
+- `X-Forwarded-For` is ignored unless the direct TCP peer matches a configured `TRUSTED_PROXY_CIDRS` prefix. The edge proxy must append the actual connecting client address, and direct API ingress must be blocked when a proxy is expected.
 - SMTP, PostgreSQL backups, access review, retention/deletion windows, account deletion, incident response, and production hosting still need operational decisions. The current schema/API is a development foundation, not authorization to open public intake.
 - Do not use the loopback development-code mode outside an isolated local environment. Production requires HTTPS origin configuration, SMTP delivery, `AUTH_OTP_PEPPER`, and a separately managed `MFA_ENCRYPTION_KEY_B64`.
 
@@ -39,4 +40,4 @@
 
 - The applicant and staff experience can be developed against real server-side ownership and role rules without collecting DV form answers.
 - The first administrator is established out of band after verifying account-email control. Further staff/admin grants use the authenticated, MFA-protected admin route.
-- Email delivery, account email changes, multi-instance rate limiting, and deletion tooling require follow-up work before production intake.
+- Email delivery, account email changes, staged proxy/rate-limit load rehearsal, and deletion tooling require follow-up work before production intake.

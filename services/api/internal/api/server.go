@@ -13,32 +13,36 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/netip"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"database/sql"
 )
 
 type Config struct {
-	AppEnv           string
-	AuthOTPPepper    []byte
-	MFAEncryptionKey []byte
-	SMTPAddress      string
-	SMTPUsername     string
-	SMTPPassword     string
-	SMTPFrom         string
-	SMTPRootCAs      *x509.CertPool
-	PublicOrigin     string
-	SecureCookies    bool
-	DevelopmentCode  bool
+	AppEnv            string
+	AuthOTPPepper     []byte
+	MFAEncryptionKey  []byte
+	SMTPAddress       string
+	SMTPUsername      string
+	SMTPPassword      string
+	SMTPFrom          string
+	SMTPRootCAs       *x509.CertPool
+	TrustedProxyCIDRs []netip.Prefix
+	PublicOrigin      string
+	SecureCookies     bool
+	DevelopmentCode   bool
 }
 
 type Server struct {
-	db       *sql.DB
-	config   Config
-	logger   *slog.Logger
-	limit    *rateLimiter
-	smtpDial func(network, address string) (net.Conn, error)
+	db                 *sql.DB
+	config             Config
+	logger             *slog.Logger
+	limit              *rateLimiter
+	smtpDial           func(network, address string) (net.Conn, error)
+	rateCleanupCounter atomic.Uint64
 }
 
 type contextKey string
