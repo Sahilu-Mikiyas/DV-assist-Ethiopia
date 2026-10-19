@@ -72,7 +72,7 @@ func createPhase3Identity(t *testing.T, db *sql.DB, role string, mfa bool) phase
 func createPhase3Case(t *testing.T, db *sql.DB, ownerID string) string {
 	t.Helper()
 	id := newUUID()
-	if _, err := db.Exec(`INSERT INTO cases(id,owner_user_id,cycle_key) VALUES($1::uuid,$2::uuid,$3)`, id, ownerID, "test-"+strings.ReplaceAll(id, "-", "")); err != nil {
+	if _, err := db.Exec(`INSERT INTO cases(id,owner_user_id,cycle_key) VALUES($1::uuid,$2::uuid,$3)`, id, ownerID, "test-"+strings.ReplaceAll(id[:8], "-", "")); err != nil {
 		t.Fatalf("insert test case: %v", err)
 	}
 	return id
