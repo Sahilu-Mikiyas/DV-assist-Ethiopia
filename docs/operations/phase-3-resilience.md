@@ -52,11 +52,13 @@ Verify one delivered code, the 10-minute expiration, one successful verification
 
 Delivery is synchronous and has no durable outbox or automatic retry. A successful API response means the request was accepted, not that the recipient received the message. Monitor relay delivery/rejection reports through the provider's protected console. Add an outbox, retry policy, delivery status, and alerting before promising reliable email delivery or running multiple API replicas.
 
-## Rate-limit and replica boundary
+## Rate-limit and proxy configuration
 
-The current sign-in challenge limiter is process-local, in-memory, and resets when the API restarts. It allows up to 8 requests per client IP per 15 minutes and 4 per normalized email per hour. It is suitable only for controlled single-process development/rehearsal; it does not coordinate multiple replicas, survive restarts, or replace edge-level abuse protection.
+When PostgreSQL is configured, sign-in request and verification limits use the shared `auth_rate_limits` table, so replicas coordinate counters and API restarts do not reset active windows. Development mode without a database keeps the in-memory limiter. The rules remain 8 challenge requests per client IP per 15 minutes, 4 per normalized email per hour, 20 verification attempts per client IP per 15 minutes, and 10 per normalized email per 15 minutes. Database errors fail closed with a temporary-unavailable response; monitor database latency because auth requests now depend on the shared counter write.
 
-Until a shared limiter and trusted-proxy configuration are implemented and reviewed, deploy at most one API process behind a correctly configured HTTPS edge. Do not trust arbitrary forwarded-IP headers. Before increasing replicas, choose and test a shared limiter (for example, a managed Redis service), ensure edge IP handling is restricted to known proxies, and verify rate limits still hold across restarts and concurrent instances.
+By default, the API ignores `X-Forwarded-For` and uses the TCP peer address. Set `TRUSTED_PROXY_CIDRS` to a comma-separated list of the exact proxy CIDR ranges that may connect directly to the API. For requests from those peers only, the API walks the forwarded chain from right to left and selects the first address outside the trusted ranges. The ingress must append the actual peer address to `X-Forwarded-For` and prevent clients from bypassing that ingress. Never include broad public networks such as `0.0.0.0/0` or `::/0`.
+
+Before scaling out, deploy the migration, update the API runtime role grants, configure the exact proxy CIDRs, and verify the same synthetic client is rate-limited across two API instances and after a restart. This database-backed limiter coordinates the current PostgreSQL deployment; capacity and database-failure behavior still need a staging load rehearsal. It does not replace edge-level abuse protection.
 
 ## CI rehearsal boundary
 
