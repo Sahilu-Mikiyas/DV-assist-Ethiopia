@@ -22,19 +22,19 @@ import (
 )
 
 type Config struct {
-	AppEnv            string
-	AuthOTPPepper     []byte
-	MFAEncryptionKey  []byte
-	SMTPAddress       string
-	SMTPUsername      string
-	SMTPPassword      string
-	SMTPFrom          string
-	SMTPRootCAs       *x509.CertPool
+	AppEnv                   string
+	AuthOTPPepper            []byte
+	MFAEncryptionKey         []byte
+	SMTPAddress              string
+	SMTPUsername             string
+	SMTPPassword             string
+	SMTPFrom                 string
+	SMTPRootCAs              *x509.CertPool
 	EmailOutboxEncryptionKey []byte
-	TrustedProxyCIDRs []netip.Prefix
-	PublicOrigin      string
-	SecureCookies     bool
-	DevelopmentCode   bool
+	TrustedProxyCIDRs        []netip.Prefix
+	PublicOrigin             string
+	SecureCookies            bool
+	DevelopmentCode          bool
 }
 
 type Server struct {
