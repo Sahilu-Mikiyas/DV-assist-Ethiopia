@@ -483,7 +483,13 @@ func (s *Server) sendCode(email, code string) error {
 	if err != nil {
 		return fmt.Errorf("invalid SMTP address")
 	}
-	conn, err := net.DialTimeout("tcp", s.config.SMTPAddress, 10*time.Second)
+	dial := s.smtpDial
+	if dial == nil {
+		dial = func(network, address string) (net.Conn, error) {
+			return net.DialTimeout(network, address, 10*time.Second)
+		}
+	}
+	conn, err := dial("tcp", s.config.SMTPAddress)
 	if err != nil {
 		return fmt.Errorf("connect to SMTP relay")
 	}
@@ -499,7 +505,7 @@ func (s *Server) sendCode(email, code string) error {
 	if supported, _ := client.Extension("STARTTLS"); !supported {
 		return fmt.Errorf("SMTP relay does not support STARTTLS")
 	}
-	if err := client.StartTLS(&tls.Config{ServerName: host, MinVersion: tls.VersionTLS12}); err != nil {
+	if err := client.StartTLS(&tls.Config{ServerName: host, MinVersion: tls.VersionTLS12, RootCAs: s.config.SMTPRootCAs}); err != nil {
 		return fmt.Errorf("start SMTP TLS")
 	}
 	var auth smtp.Auth
@@ -530,7 +536,7 @@ func (s *Server) sendCode(email, code string) error {
 		return fmt.Errorf("finish SMTP message")
 	}
 	if err := client.Quit(); err != nil {
-		return fmt.Errorf("close SMTP transaction")
+		return fmt.Errorf("close SMTP transaction: %w", err)
 	}
 	return nil
 }
