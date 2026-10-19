@@ -52,3 +52,43 @@ jobs:
       - name: Check formatting, vet, and build
         shell: pwsh
         run: ./scripts/check-go.ps1
+
+  migration-smoke:
+    name: Apply and roll back PostgreSQL schema
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://dvassist_dev:local-only-change-me@localhost:5432/ethio_dv_assist?sslmode=disable
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: ethio_dv_assist
+          POSTGRES_USER: dvassist_dev
+          POSTGRES_PASSWORD: local-only-change-me
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dvassist_dev -d ethio_dv_assist"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: services/api/go.mod
+
+      - name: Install pinned golang-migrate CLI
+        run: |
+          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.20.1
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Apply, roll back, and reapply migrations
+        run: |
+          migrate -source "file://$GITHUB_WORKSPACE/db/migrations" -database "$DATABASE_URL" up
+          migrate -source "file://$GITHUB_WORKSPACE/db/migrations" -database "$DATABASE_URL" down 1
+          migrate -source "file://$GITHUB_WORKSPACE/db/migrations" -database "$DATABASE_URL" up
+          migrate -source "file://$GITHUB_WORKSPACE/db/migrations" -database "$DATABASE_URL" version
