@@ -3,8 +3,8 @@ package api
 import (
 	"context"
 	"crypto/hmac"
-	"crypto/x509"
 	"crypto/rand"
+	"crypto/x509"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -34,10 +34,10 @@ type Config struct {
 }
 
 type Server struct {
-	db     *sql.DB
-	config Config
-	logger *slog.Logger
-	limit  *rateLimiter
+	db       *sql.DB
+	config   Config
+	logger   *slog.Logger
+	limit    *rateLimiter
 	smtpDial func(network, address string) (net.Conn, error)
 }
 
