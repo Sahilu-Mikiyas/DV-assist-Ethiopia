@@ -36,6 +36,7 @@ func main() {
 	}
 	var db *sql.DB
 	var mfaKey []byte
+	var emailOutboxKey []byte
 	if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {
 		pepper := os.Getenv("AUTH_OTP_PEPPER")
 		if len(pepper) < 32 {
@@ -68,12 +69,20 @@ func main() {
 	} else {
 		logger.Warn("DATABASE_URL is not configured; account and case routes will return service unavailable")
 	}
+	if os.Getenv("SMTP_ADDR") != "" {
+		decodedKey, decodeErr := base64.StdEncoding.DecodeString(os.Getenv("MAIL_OUTBOX_ENCRYPTION_KEY_B64"))
+		if decodeErr != nil || len(decodedKey) != 32 {
+			logger.Error("MAIL_OUTBOX_ENCRYPTION_KEY_B64 must decode to exactly 32 bytes when SMTP delivery is configured")
+			os.Exit(1)
+		}
+		emailOutboxKey = decodedKey
+	}
 	if appEnv == "production" {
 		origin, originErr := url.Parse(os.Getenv("PUBLIC_ORIGIN"))
 		_, _, smtpErr := net.SplitHostPort(os.Getenv("SMTP_ADDR"))
 		from, fromErr := mail.ParseAddress(os.Getenv("SMTP_FROM"))
 		if db == nil || originErr != nil || origin.Scheme != "https" || origin.Host == "" || (origin.Path != "" && origin.Path != "/") || origin.User != nil || smtpErr != nil || fromErr != nil || from.Address != os.Getenv("SMTP_FROM") {
-			logger.Error("production requires an HTTPS PUBLIC_ORIGIN and configured SMTP delivery")
+			logger.Error("production requires an HTTPS PUBLIC_ORIGIN and configured SMTP delivery with an encrypted outbox key")
 			os.Exit(1)
 		}
 	}
@@ -84,6 +93,7 @@ func main() {
 		SMTPAddress:       os.Getenv("SMTP_ADDR"),
 		SMTPUsername:      os.Getenv("SMTP_USERNAME"),
 		SMTPPassword:      os.Getenv("SMTP_PASSWORD"),
+		EmailOutboxEncryptionKey: emailOutboxKey,
 		SMTPFrom:          os.Getenv("SMTP_FROM"),
 		PublicOrigin:      os.Getenv("PUBLIC_ORIGIN"),
 		SecureCookies:     appEnv != "development",
