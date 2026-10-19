@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"crypto/hmac"
+	"crypto/x509"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -10,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -25,6 +27,7 @@ type Config struct {
 	SMTPUsername     string
 	SMTPPassword     string
 	SMTPFrom         string
+	SMTPRootCAs      *x509.CertPool
 	PublicOrigin     string
 	SecureCookies    bool
 	DevelopmentCode  bool
@@ -35,6 +38,7 @@ type Server struct {
 	config Config
 	logger *slog.Logger
 	limit  *rateLimiter
+	smtpDial func(network, address string) (net.Conn, error)
 }
 
 type contextKey string
