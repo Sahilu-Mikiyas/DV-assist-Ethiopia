@@ -7,6 +7,7 @@ import (
 	"errors"
 	"log/slog"
 	"net"
+	"net/netip"
 	"net/http"
 	"net/mail"
 	"net/url"
@@ -28,6 +29,11 @@ func main() {
 		os.Exit(1)
 	}
 	webRoot := env("WEB_ROOT", filepath.Join("..", "..", "apps", "web"))
+	trustedProxyCIDRs, parseErr := parseTrustedProxyCIDRs(os.Getenv("TRUSTED_PROXY_CIDRS"))
+	if parseErr != nil {
+		logger.Error("TRUSTED_PROXY_CIDRS must be a comma-separated list of valid, non-global CIDR prefixes")
+		os.Exit(1)
+	}
 	var db *sql.DB
 	var mfaKey []byte
 	if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {
@@ -82,6 +88,7 @@ func main() {
 		PublicOrigin:     os.Getenv("PUBLIC_ORIGIN"),
 		SecureCookies:    appEnv != "development",
 		DevelopmentCode:  appEnv == "development" && isLoopbackAddress(address),
+		TrustedProxyCIDRs: trustedProxyCIDRs,
 	}
 
 	mux := http.NewServeMux()
@@ -116,6 +123,25 @@ func main() {
 		logger.Error("API server stopped", "reason", "listen_failed")
 		os.Exit(1)
 	}
+}
+
+func parseTrustedProxyCIDRs(value string) ([]netip.Prefix, error) {
+	if strings.TrimSpace(value) == "" {
+		return nil, nil
+	}
+	parts := strings.Split(value, ",")
+	prefixes := make([]netip.Prefix, 0, len(parts))
+	for _, part := range parts {
+		prefix, err := netip.ParsePrefix(strings.TrimSpace(part))
+		if err != nil {
+			return nil, err
+		}
+		if prefix.Bits() == 0 {
+			return nil, errors.New("trusting an entire address family is not allowed")
+		}
+		prefixes = append(prefixes, prefix.Masked())
+	}
+	return prefixes, nil
 }
 
 func env(key, fallback string) string {
