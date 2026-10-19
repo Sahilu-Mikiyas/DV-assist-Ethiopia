@@ -33,6 +33,8 @@ All ownership and role rules are enforced in the API. Hiding a UI control is not
 
 ## Controls and limitations
 
+- The CI PostgreSQL integration job exercises applicant ownership, staff assignment scoping and MFA gating, case-read audit outcomes, concurrent status revisions, and logout revocation. Those checks require the disposable PostgreSQL service; a local `go test ./...` without `DATABASE_URL` reports the integration tests as skipped.
+
 - Passwordless challenge codes: 10-minute expiry, bounded attempts, HMAC digest, generic response, and process-local IP/email rate limit.
 - Sessions: opaque random token stored only as a digest, `HttpOnly` cookie, expiry, CSRF cookie/header pair, origin check, and logout revocation.
 - Staff/admin access requires TOTP MFA. TOTP secrets are encrypted at rest with a separate 32-byte key. Current recovery is admin reset; there are no backup codes.
