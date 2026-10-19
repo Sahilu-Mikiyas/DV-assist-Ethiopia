@@ -16,12 +16,16 @@
    $pepperBytes = New-Object byte[] 48
    [System.Security.Cryptography.RandomNumberGenerator]::Fill($pepperBytes)
    $env:AUTH_OTP_PEPPER = [Convert]::ToBase64String($pepperBytes)
+   # Generate this separate key only when SMTP delivery is configured.
+   $outboxBytes = New-Object byte[] 32
+   [System.Security.Cryptography.RandomNumberGenerator]::Fill($outboxBytes)
+   $env:MAIL_OUTBOX_ENCRYPTION_KEY_B64 = [Convert]::ToBase64String($outboxBytes)
    ```
 
 5. Apply migrations, then run `go run ./cmd/api` from `services/api` with `APP_ENV=development`. Development codes are returned only when the API binds to a loopback address.
 6. Run the React app separately from `apps/app` using `npm run dev`.
 
-Never reuse a development MFA encryption key in production. Back it up securely: losing it prevents decrypting enrolled TOTP seeds. Do not rotate it without a planned re-enrollment process. The OTP pepper is also a secret; rotation invalidates outstanding challenge digests.
+Never reuse a development MFA encryption key in production. Back it up securely: losing it prevents decrypting enrolled TOTP seeds. Do not rotate it without a planned re-enrollment process. The OTP pepper is also a secret; rotation invalidates outstanding challenge digests. Keep the email outbox encryption key separate from the MFA key and maintain a key-rotation/recovery procedure; changing it while encrypted messages remain queued makes those messages undecryptable.
 
 ## Initial administrator
 
