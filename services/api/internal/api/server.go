@@ -86,6 +86,7 @@ func New(db *sql.DB, config Config, logger *slog.Logger) http.Handler {
 	mux.HandleFunc("GET /api/v1/cases/{caseID}/events", s.caseTimeline)
 	mux.HandleFunc("GET /api/v1/staff/cases", s.listStaffCases)
 	mux.HandleFunc("GET /api/v1/admin/staff", s.listStaffUsers)
+	mux.HandleFunc("GET /api/v1/admin/ops/email-outbox", s.emailOutboxStatus)
 	mux.HandleFunc("POST /api/v1/admin/users/lookup", s.findUser)
 	mux.HandleFunc("POST /api/v1/staff/cases/{caseID}/assignment", s.assignCase)
 	mux.HandleFunc("POST /api/v1/staff/cases/{caseID}/transition", s.transitionCase)
