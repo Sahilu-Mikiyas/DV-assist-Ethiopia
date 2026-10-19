@@ -122,11 +122,11 @@ func (s *Server) requestChallenge(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "request_failed", "The request could not be completed.")
 		return
 	}
-	if !disabled.Valid && (s.config.DevelopmentCode || s.config.SMTPAddress != "") {
+	if !disabled.Valid {
 		challengeID := newUUID()
 		var outboxID string
 		var encryptedPayload []byte
-		if !s.config.DevelopmentCode {
+		if !s.config.DevelopmentCode && s.config.SMTPAddress != "" {
 			outboxID = newUUID()
 			encryptedPayload, err = s.encryptEmailOutboxPayload(outboxID, emailOutboxPayload{Email: email, Code: code})
 			if err != nil {
@@ -145,7 +145,7 @@ func (s *Server) requestChallenge(w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 			_, err = tx.ExecContext(ctx, `UPDATE auth_challenges SET consumed_at=now() WHERE user_id=$1::uuid AND consumed_at IS NULL`, userID)
 		}
-		if err == nil {
+		if err == nil && (s.config.DevelopmentCode || s.config.SMTPAddress != "") {
 			_, err = tx.ExecContext(ctx, `INSERT INTO auth_challenges(id,user_id,code_digest,expires_at) VALUES($1::uuid,$2::uuid,$3,now()+interval '10 minutes')`, challengeID, userID, s.otpDigest(challengeID, code))
 		}
 		if err == nil && outboxID != "" {
