@@ -17,20 +17,21 @@ Set both role passwords interactively with psql's `\password dvassist_runtime` a
 
 Configure the API's `DATABASE_URL` with `dvassist_runtime`. Keep the migration-owner URL restricted to an operator-controlled migration job. Do not give the API role `CREATEDB`, `CREATEROLE`, superuser, schema-create, table-owner, or append-only update/delete privileges.
 
-After every schema migration, review the runtime query surface and update the explicit grants in the SQL file. The backup login needs `SELECT` on any newly introduced table before that table is included in a dump. Verify role separation by querying `pg_roles` and `information_schema.table_privileges` as an administrator; confirm the runtime login cannot create tables or update/delete `case_events` and `audit_events`.
+After every schema migration, review the runtime query surface and update the explicit grants in the SQL file. The backup login needs `SELECT` on any newly introduced table before that table is included in a dump. Confirm neither login is a member of a migration/owner role. Verify role separation by querying `pg_roles` and `information_schema.table_privileges` as an administrator; confirm the runtime login cannot create tables or update/delete `case_events` and `audit_events`.
 
 ## Backup and restore rehearsal
 
 Agree on backup frequency, retention, recovery point objective, recovery time objective, encryption, and access owners before production. This repository intentionally does not invent those policy values. Backups contain account email and authentication/session metadata, so handle them as sensitive data even though Phase 3 does not store DV answers or photos.
 
-Run backups from a controlled operator host with PostgreSQL client tools and a `DATABASE_URL` using the read-only backup role. Keep the destination private and encrypted at rest. The example writes a custom-format dump and fails if `pg_dump` fails:
+Run backups from a controlled operator host with PostgreSQL client tools and a `DATABASE_URL` using the read-only backup role. Set `BACKUP_DIRECTORY` to a pre-created private, encrypted destination; do not use a shared or developer temp folder. The example writes a custom-format dump and fails if `pg_dump` fails:
 
 ```powershell
-$backupFile = Join-Path $env:TEMP ("ethio-dv-" + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.dump')
+$backupFile = Join-Path $env:BACKUP_DIRECTORY ("ethio-dv-" + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.dump')
 pg_dump --format=custom --no-owner --file $backupFile $env:DATABASE_URL
 if ($LASTEXITCODE -ne 0) { throw 'Database backup failed.' }
 pg_restore --list $backupFile | Select-Object -First 20
 if ($LASTEXITCODE -ne 0) { throw 'Backup archive could not be read.' }
+Get-FileHash $backupFile -Algorithm SHA256
 ```
 
 Do not treat a readable archive as a successful restore. Rehearse into a fresh, isolated recovery database in the approved protected environment. Do not restore production account data into a developer laptop, local demo, or shared preview. Keep the application disconnected while restoring and verifying:

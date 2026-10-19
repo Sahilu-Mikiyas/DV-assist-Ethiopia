@@ -21,8 +21,12 @@ $$;
 
 ALTER ROLE dvassist_runtime LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
 ALTER ROLE dvassist_backup LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+ALTER ROLE dvassist_runtime SET search_path = public;
+ALTER ROLE dvassist_backup SET search_path = public;
 
 GRANT CONNECT ON DATABASE :"database_name" TO dvassist_runtime, dvassist_backup;
+REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+REVOKE CREATE ON SCHEMA public FROM dvassist_runtime, dvassist_backup;
 GRANT USAGE ON SCHEMA public TO dvassist_runtime, dvassist_backup;
 
 -- API tables: current handlers only need read, insert, and update access.
