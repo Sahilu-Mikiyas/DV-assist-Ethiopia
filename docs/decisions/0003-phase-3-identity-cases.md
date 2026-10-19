@@ -14,6 +14,7 @@
 - Store HMAC digests of one-time codes and SHA-256 digests of high-entropy session tokens. Do not store raw codes or session tokens.
 - Sessions expire after 12 hours and are revocable. Use `HttpOnly`, `SameSite=Lax` session cookies, a separate CSRF cookie/header, same-origin checks, and `Secure` cookies outside local development.
 - The email channel is both sign-in and account recovery. Changing the account email is not implemented in Phase 3.
+- When SMTP is configured, challenge delivery is queued transactionally in an encrypted PostgreSQL outbox and processed with bounded retries. Delivery is at-least-once and may duplicate a message after a process crash.
 
 ### Privileged access
 
