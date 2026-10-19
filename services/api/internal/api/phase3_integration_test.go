@@ -267,7 +267,6 @@ func TestClientIPUsesForwardedChainOnlyForTrustedPeers(t *testing.T) {
 	}
 }
 
-
 func TestPhase3AuthEmailOutboxEncryptsAndDelivers(t *testing.T) {
 	db := phase3TestDB(t)
 	relay := startTestSMTPRelay(t, true, false)
@@ -275,14 +274,14 @@ func TestPhase3AuthEmailOutboxEncryptsAndDelivers(t *testing.T) {
 	server := &Server{
 		db: db,
 		config: Config{
-			AuthOTPPepper: bytes.Repeat([]byte("p"), 32),
+			AuthOTPPepper:            bytes.Repeat([]byte("p"), 32),
 			EmailOutboxEncryptionKey: bytes.Repeat([]byte("k"), 32),
-			SMTPAddress: relay.address,
-			SMTPFrom: "signin@example.test",
-			SMTPRootCAs: relay.roots,
+			SMTPAddress:              relay.address,
+			SMTPFrom:                 "signin@example.test",
+			SMTPRootCAs:              relay.roots,
 		},
-		logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
-		limit: newRateLimiter(),
+		logger:   slog.New(slog.NewTextHandler(io.Discard, nil)),
+		limit:    newRateLimiter(),
 		smtpDial: relay.dial,
 	}
 	body, err := json.Marshal(map[string]string{"email": email})
@@ -303,7 +302,7 @@ func TestPhase3AuthEmailOutboxEncryptsAndDelivers(t *testing.T) {
 	}
 	select {
 	case message := <-relay.message:
-		if !strings.Contains(message, "To: "+email+"\\r\\n") {
+		if !strings.Contains(message, "To: "+email+"\r\n") {
 			t.Fatalf("delivered message missing synthetic recipient: %q", message)
 		}
 	case <-time.After(3 * time.Second):
@@ -334,13 +333,13 @@ func TestPhase3AuthEmailOutboxRetriesTransientSMTPFailure(t *testing.T) {
 	server := &Server{
 		db: db,
 		config: Config{
-			AuthOTPPepper: bytes.Repeat([]byte("p"), 32),
+			AuthOTPPepper:            bytes.Repeat([]byte("p"), 32),
 			EmailOutboxEncryptionKey: bytes.Repeat([]byte("k"), 32),
-			SMTPAddress: failingRelay.address,
-			SMTPFrom: "signin@example.test",
+			SMTPAddress:              failingRelay.address,
+			SMTPFrom:                 "signin@example.test",
 		},
-		logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
-		limit: newRateLimiter(),
+		logger:   slog.New(slog.NewTextHandler(io.Discard, nil)),
+		limit:    newRateLimiter(),
 		smtpDial: failingRelay.dial,
 	}
 	body, err := json.Marshal(map[string]string{"email": email})
@@ -368,7 +367,7 @@ func TestPhase3AuthEmailOutboxRetriesTransientSMTPFailure(t *testing.T) {
 	}
 	select {
 	case message := <-workingRelay.message:
-		if !strings.Contains(message, "To: "+email+"\\r\\n") {
+		if !strings.Contains(message, "To: "+email+"\r\n") {
 			t.Fatalf("retried message missing synthetic recipient: %q", message)
 		}
 	case <-time.After(3 * time.Second):
