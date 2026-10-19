@@ -64,6 +64,10 @@ Before scaling out, deploy the migration, update the API runtime role grants, co
 
 The `phase3-operations-smoke` GitHub Actions job applies migrations to a disposable PostgreSQL 17 database, provisions the runtime and backup roles, checks their privileges, runs the API integration suite as the non-owner runtime login, and dumps/restores synthetic rows into a fresh database. This verifies the repository role script and basic PostgreSQL restore mechanics. The disposable CI dump is not an encrypted off-site backup and does not establish production retention, RPO/RTO, access ownership, SMTP delivery, or incident response.
 
+## Automated proxy and replica checks
+
+The PostgreSQL-backed API integration suite creates independent server instances over one database and verifies that a synthetic rate-limit counter is shared across them, including a fresh instance standing in for a restart. Unit coverage checks that the forwarded chain is used only for a trusted direct peer, and that an untrusted peer or malformed chain falls back to the socket peer. These checks use synthetic values only. They do not validate the deployed ingress CIDRs, network isolation, or behavior of two live API processes, so complete the staging rehearsal above before scaling replicas.
+
 ## Readiness evidence and limits
 
 Record dates, environment, operator, sanitized results, and follow-up items for each rehearsal. The Phase 3 gate remains open until backup restore, role isolation, SMTP failure behavior, rate limits in the actual deployment topology, privacy/retention policy, and incident ownership have been demonstrated and approved. These instructions do not authorize real applicant intake, payment collection, official submission, or confirmation-number storage.
