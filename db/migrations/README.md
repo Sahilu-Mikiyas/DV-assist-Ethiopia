@@ -1,6 +1,6 @@
 # Database migration conventions
 
-Phase 3 adds only account identity (normalized email and MFA/session material) and case workflow metadata. It deliberately does not add DV answers, family details, photos, payment evidence, confirmation numbers, or support messages. Before real intake, the data inventory, account/case retention and deletion periods, incident process, hosting, and backups must be approved.
+Phase 3 added account identity and case workflow metadata. Migration `20261020100000_encrypted_case_drafts` adds versioned cycle form schemas and AES-GCM ciphertext storage for applicant draft answers. The only seeded cycle is DV-2027 in `blocked_pending_official_instructions` status with no fields. Draft endpoints reject it. This storage foundation does not authorize real intake: before enabling any cycle, publish its source-reviewed schema, record two distinct reviewer identities, configure the separate `APPLICANT_DATA_ENCRYPTION_KEY_B64`, and approve data inventory, retention/deletion, hosting, incident, and backup policies.
 
 ## Migration runner
 
@@ -39,6 +39,8 @@ Keep migration files compatible with PostgreSQL and avoid runner-specific direct
 - Never store credentials, Telebirr PINs/OTPs, or official-site passwords.
 - Minimize sensitive values in indexes, logs, backups, fixtures, and error messages.
 - Explain retention and deletion behavior for every personal-data column or file reference.
+- Do not change a cycle schema to `verified` until two independent reviewers have checked the official instructions and the release process records their identities. The API requires distinct reviewer references and a verified timestamp. Never mark a cycle verified to exercise the demo.
+- Cycle schema publication is an operator-controlled database release, not an applicant-facing API. Create a new immutable `(cycle_key, schema_version)` row after reviewing the JSON with `scripts/validate-cycle-config.mjs`; in one migration-owner transaction, clear `is_current` on the previous row and insert the new `verified` row with source URLs, UTC `verified_at`, and two distinct reviewer user UUIDs. The runtime role has read-only access to this registry. Do not release a config until the official instructions and consent/data policies are approved.
 - Use synthetic fixtures only; never copy production applicant records into development.
 
 The initial Phase 3 identity and case metadata model is in `20261017010000_phase3_identity_cases.up.sql`; it is not approval to collect real DV form answers or files.
