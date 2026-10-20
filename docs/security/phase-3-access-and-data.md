@@ -9,11 +9,12 @@
 | Session and CSRF token digests | Authenticate requests and enforce CSRF | API only | PostgreSQL; browser receives opaque cookies |
 | TOTP secret ciphertext and MFA state | Require MFA for privileged roles | API decrypts with dedicated key; owner uses authenticator | PostgreSQL encrypted with AES-GCM and `MFA_ENCRYPTION_KEY_B64` |
 | Queued email recipient and sign-in code | Deliver an active challenge asynchronously | API worker only | PostgreSQL AES-GCM ciphertext using separate `MAIL_OUTBOX_ENCRYPTION_KEY_B64`; ciphertext cleared after delivery or terminal failure |
+| Applicant draft answers | Let the applicant save and resume a preparation draft | Owning applicant only; staff access is not provided by these endpoints | PostgreSQL AES-GCM ciphertext using separate `APPLICANT_DATA_ENCRYPTION_KEY_B64`, authenticated with case ID, cycle, and schema version |
 | Role grants | Authorize applicant, staff, and administrator workflows | API; admins can manage other users | PostgreSQL |
 | Case cycle key, status, owner, staff assignment, revision | Track preparation workflow shell | Owner, assigned staff, or administrator per matrix | PostgreSQL |
 | Case events and audit events | Explain sensitive access and changes | Case participants; audit is server-side | PostgreSQL append-only triggers |
 
-The app does not yet store DV-form answers, family-member details, photos, payment evidence, confirmation numbers, government account credentials, support messages, or official application submission data. Retention durations and automated deletion are not implemented; approve policy before real account/case use.
+The draft API foundation stores encrypted answers only for a cycle with an explicitly verified schema; DV-2027 remains blocked and empty. Family-member details and photos, payment evidence, confirmation numbers, government account credentials, support messages, and official application submission data are not stored. Retention durations and automated deletion are not implemented; approve policy before real account/case use.
 
 ## Access matrix
 

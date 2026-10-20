@@ -22,19 +22,20 @@ import (
 )
 
 type Config struct {
-	AppEnv                   string
-	AuthOTPPepper            []byte
-	MFAEncryptionKey         []byte
-	SMTPAddress              string
-	SMTPUsername             string
-	SMTPPassword             string
-	SMTPFrom                 string
-	SMTPRootCAs              *x509.CertPool
-	EmailOutboxEncryptionKey []byte
-	TrustedProxyCIDRs        []netip.Prefix
-	PublicOrigin             string
-	SecureCookies            bool
-	DevelopmentCode          bool
+	AppEnv                     string
+	AuthOTPPepper              []byte
+	MFAEncryptionKey           []byte
+	SMTPAddress                string
+	SMTPUsername               string
+	SMTPPassword               string
+	SMTPFrom                   string
+	SMTPRootCAs                *x509.CertPool
+	EmailOutboxEncryptionKey   []byte
+	ApplicantDataEncryptionKey []byte
+	TrustedProxyCIDRs          []netip.Prefix
+	PublicOrigin               string
+	SecureCookies              bool
+	DevelopmentCode            bool
 }
 
 type Server struct {
@@ -83,6 +84,8 @@ func New(db *sql.DB, config Config, logger *slog.Logger) http.Handler {
 	mux.HandleFunc("POST /api/v1/cases", s.createCase)
 	mux.HandleFunc("GET /api/v1/cases", s.listMyCases)
 	mux.HandleFunc("GET /api/v1/cases/{caseID}", s.getCase)
+	mux.HandleFunc("GET /api/v1/cases/{caseID}/draft", s.getCaseDraft)
+	mux.HandleFunc("PUT /api/v1/cases/{caseID}/draft", s.saveCaseDraft)
 	mux.HandleFunc("GET /api/v1/cases/{caseID}/events", s.caseTimeline)
 	mux.HandleFunc("GET /api/v1/staff/cases", s.listStaffCases)
 	mux.HandleFunc("GET /api/v1/admin/staff", s.listStaffUsers)

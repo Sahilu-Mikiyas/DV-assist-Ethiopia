@@ -37,6 +37,7 @@ func main() {
 	var db *sql.DB
 	var mfaKey []byte
 	var emailOutboxKey []byte
+	var applicantDataKey []byte
 	if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {
 		pepper := os.Getenv("AUTH_OTP_PEPPER")
 		if len(pepper) < 32 {
@@ -49,6 +50,14 @@ func main() {
 			os.Exit(1)
 		}
 		mfaKey = decodedKey
+		if encodedApplicantKey := os.Getenv("APPLICANT_DATA_ENCRYPTION_KEY_B64"); encodedApplicantKey != "" {
+			decodedApplicantKey, applicantDecodeErr := base64.StdEncoding.DecodeString(encodedApplicantKey)
+			if applicantDecodeErr != nil || len(decodedApplicantKey) != 32 {
+				logger.Error("APPLICANT_DATA_ENCRYPTION_KEY_B64 must decode to exactly 32 bytes when configured")
+				os.Exit(1)
+			}
+			applicantDataKey = decodedApplicantKey
+		}
 		var err error
 		db, err = sql.Open("pgx", databaseURL)
 		if err != nil {
@@ -87,18 +96,19 @@ func main() {
 		}
 	}
 	config := api.Config{
-		AppEnv:                   appEnv,
-		AuthOTPPepper:            []byte(os.Getenv("AUTH_OTP_PEPPER")),
-		MFAEncryptionKey:         mfaKey,
-		SMTPAddress:              os.Getenv("SMTP_ADDR"),
-		SMTPUsername:             os.Getenv("SMTP_USERNAME"),
-		SMTPPassword:             os.Getenv("SMTP_PASSWORD"),
-		EmailOutboxEncryptionKey: emailOutboxKey,
-		SMTPFrom:                 os.Getenv("SMTP_FROM"),
-		PublicOrigin:             os.Getenv("PUBLIC_ORIGIN"),
-		SecureCookies:            appEnv != "development",
-		DevelopmentCode:          appEnv == "development" && isLoopbackAddress(address),
-		TrustedProxyCIDRs:        trustedProxyCIDRs,
+		AppEnv:                     appEnv,
+		AuthOTPPepper:              []byte(os.Getenv("AUTH_OTP_PEPPER")),
+		MFAEncryptionKey:           mfaKey,
+		SMTPAddress:                os.Getenv("SMTP_ADDR"),
+		SMTPUsername:               os.Getenv("SMTP_USERNAME"),
+		SMTPPassword:               os.Getenv("SMTP_PASSWORD"),
+		EmailOutboxEncryptionKey:   emailOutboxKey,
+		ApplicantDataEncryptionKey: applicantDataKey,
+		SMTPFrom:                   os.Getenv("SMTP_FROM"),
+		PublicOrigin:               os.Getenv("PUBLIC_ORIGIN"),
+		SecureCookies:              appEnv != "development",
+		DevelopmentCode:            appEnv == "development" && isLoopbackAddress(address),
+		TrustedProxyCIDRs:          trustedProxyCIDRs,
 	}
 
 	mux := http.NewServeMux()
