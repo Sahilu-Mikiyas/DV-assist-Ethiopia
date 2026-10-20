@@ -11,9 +11,43 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 )
 
 const maxDraftBytes = 128 * 1024
+
+func (s *Server) getCurrentCycleFormSchema(w http.ResponseWriter, r *http.Request) {
+	user, _, ok := s.requireUser(w, r)
+	if !ok || !s.requireRole(w, r, user, "applicant") {
+		return
+	}
+	cycle := strings.TrimSpace(r.PathValue("cycleKey"))
+	if !cycleKeyPattern.MatchString(cycle) {
+		writeError(w, http.StatusBadRequest, "invalid_cycle_key", "Enter a valid cycle key.")
+		return
+	}
+	var version int
+	var body []byte
+	err := s.db.QueryRowContext(r.Context(), `SELECT schema_version,schema_json FROM cycle_form_schemas WHERE cycle_key=$1 AND status='verified' AND is_current AND verified_at IS NOT NULL AND approval_one IS NOT NULL AND approval_two IS NOT NULL AND approval_one<>approval_two`, cycle).Scan(&version, &body)
+	if errors.Is(err, sql.ErrNoRows) {
+		writeError(w, http.StatusConflict, "cycle_not_available", "This cycle has no independently reviewed form schema, so answer collection is disabled.")
+		return
+	}
+	if err != nil {
+		s.dbError(w, r, "read current form schema", err)
+		return
+	}
+	var schema draftSchema
+	if err := json.Unmarshal(body, &schema); err != nil {
+		s.dbError(w, r, "decode current form schema", err)
+		return
+	}
+	if schema.Cycle != cycle || schema.SchemaVersion != version || schema.Status != "verified" {
+		writeError(w, http.StatusConflict, "cycle_schema_invalid", "This cycle schema is not in a usable verified state.")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"schemaVersion": version, "schema": json.RawMessage(body)})
+}
 
 type draftSchema struct {
 	SchemaVersion int    `json:"schemaVersion"`
@@ -22,9 +56,10 @@ type draftSchema struct {
 	Sections      []struct {
 		Fields           []draftField `json:"fields"`
 		RepeatableGroups []struct {
-			ID       string       `json:"id"`
-			MaxItems int          `json:"maxItems"`
-			Fields   []draftField `json:"fields"`
+			ID          string       `json:"id"`
+			MaxItems    int          `json:"maxItems"`
+			UniqueField string       `json:"uniqueField"`
+			Fields      []draftField `json:"fields"`
 		} `json:"repeatableGroups"`
 	} `json:"sections"`
 }
@@ -36,6 +71,12 @@ type draftField struct {
 	Options   []struct {
 		Value string `json:"value"`
 	} `json:"options"`
+}
+
+type draftGroup struct {
+	Fields      []draftField
+	MaxItems    int
+	UniqueField string
 }
 
 func (s *Server) getCaseDraft(w http.ResponseWriter, r *http.Request) {
@@ -307,19 +348,13 @@ func draftAAD(caseID, cycle string, version int) []byte {
 
 func validateDraftAnswers(schema draftSchema, answers map[string]any) error {
 	known := map[string]draftField{}
-	groups := map[string]struct {
-		fields []draftField
-		max    int
-	}{}
+	groups := map[string]draftGroup{}
 	for _, section := range schema.Sections {
 		for _, field := range section.Fields {
 			known[field.ID] = field
 		}
 		for _, group := range section.RepeatableGroups {
-			groups[group.ID] = struct {
-				fields []draftField
-				max    int
-			}{group.Fields, group.MaxItems}
+			groups[group.ID] = draftGroup{Fields: group.Fields, MaxItems: group.MaxItems, UniqueField: group.UniqueField}
 		}
 	}
 	for key, value := range answers {
@@ -334,19 +369,28 @@ func validateDraftAnswers(schema draftSchema, answers map[string]any) error {
 			return fmt.Errorf("Unknown answer field: %s.", key)
 		}
 		items, ok := value.([]any)
-		if !ok || len(items) > group.max {
+		if !ok || len(items) > group.MaxItems {
 			return fmt.Errorf("Invalid entries for %s.", key)
 		}
+		uniqueValues := map[string]bool{}
 		for _, item := range items {
 			row, ok := item.(map[string]any)
 			if !ok {
 				return fmt.Errorf("Invalid entry in %s.", key)
 			}
 			allowed := map[string]bool{}
-			for _, field := range group.fields {
+			for _, field := range group.Fields {
 				allowed[field.ID] = true
 				if v, exists := row[field.ID]; exists && validateDraftField(field, v) != nil {
 					return fmt.Errorf("Invalid value for %s.%s.", key, field.ID)
+				}
+			}
+			if unique := row[group.UniqueField]; unique != nil {
+				if value, isString := unique.(string); isString && value != "" {
+					if uniqueValues[value] {
+						return fmt.Errorf("Duplicate values for %s.%s.", key, group.UniqueField)
+					}
+					uniqueValues[value] = true
 				}
 			}
 			for fieldID := range row {
@@ -365,6 +409,11 @@ func validateDraftField(field draftField, value any) error {
 		text, ok := value.(string)
 		if !ok || (field.MaxLength > 0 && len([]rune(text)) > field.MaxLength) {
 			return errors.New("invalid text")
+		}
+		if field.Type == "date" && text != "" {
+			if _, err := time.Parse("2006-01-02", text); err != nil {
+				return errors.New("invalid date")
+			}
 		}
 	case "boolean":
 		if _, ok := value.(bool); !ok {

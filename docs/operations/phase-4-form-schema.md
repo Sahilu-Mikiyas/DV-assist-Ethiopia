@@ -15,7 +15,7 @@ The cycle-config check validates bilingual section and field labels, supported f
 ## Current limits
 
 - The schema wizard is local prototype behavior and stores only in the browser tab's session storage.
-- The applicant UI is not connected to API persistence; the new owner-only API draft route is backend groundwork, not an online wizard.
+- The account portal now fetches a released cycle schema and saves owner-only drafts through the encrypted API. The standalone synthetic wizard remains a local demo and is not a DV form.
 - The API validates known field IDs and value types for saved draft values. It does not enforce required answers, conditional visibility, official form rules, family photo rules, or submission readiness.
 - Phase 3's PostgreSQL migration and account/case authorization gate is still unverified.
 - Do not enter real applicant information or accept payments in this build.
@@ -26,8 +26,8 @@ From the repository root, run `node scripts/validate-cycle-config.mjs`. From `ap
 
 ## Encrypted draft API foundation
 
-The API now has owner-only draft read/write routes backed by `cycle_form_schemas` and `case_drafts`. Draft JSON is encrypted with AES-GCM before it reaches PostgreSQL. The encryption key is separate from the MFA and email-outbox keys (`APPLICANT_DATA_ENCRYPTION_KEY_B64`) and must decode to exactly 32 bytes. If it is absent, draft routes return unavailable. Audit events record access/save metadata only; answer contents are never included.
+The API has owner-only draft read/write routes backed by `cycle_form_schemas` and `case_drafts`. The account portal loads the current released schema, opens the case's pinned draft, and saves using revision checks. Case creation and draft reads/writes fail closed if the cycle has no current reviewed schema. Draft JSON is encrypted with AES-GCM before it reaches PostgreSQL. The encryption key is separate from the MFA and email-outbox keys (`APPLICANT_DATA_ENCRYPTION_KEY_B64`) and must decode to exactly 32 bytes. If it is absent, draft routes return unavailable. Audit events record access/save metadata only; answer contents are never included.
 
-The database seeds DV-2027 as blocked with no fields. A schema must be reviewed against the official instructions, checked with `scripts/validate-cycle-config.mjs`, and approved by two distinct reviewers before a migration owner can publish it as current. Runtime database credentials can read schemas but cannot change them. Each draft is tied to a schema version; new edits validate field IDs and types against the current schema, and existing drafts remain decryptable against their pinned version. The applicant portal does not yet fetch/render this API contract, so this is backend groundwork rather than a usable online form.
+The database seeds DV-2027 as blocked with no fields. A schema must be reviewed against the official instructions, checked with `scripts/validate-cycle-config.mjs`, and approved by two distinct reviewers before a migration owner can publish it as current. Runtime database credentials can read schemas but cannot change them. Each draft is tied to a schema version; new edits validate field IDs and types against the current schema, and existing drafts remain decryptable against their pinned version. If a cycle version changes, the UI blocks editing of drafts pinned to the previous version until an explicit migration is implemented; answers are not silently discarded or rewritten.
 
 Do not mark DV-2027 verified or enter real applicant data. Applicant data retention/deletion policy, consent, access operations, production hosting, backup retention, and incident readiness remain launch gates.
