@@ -1,5 +1,5 @@
 import { siteConfig } from "/site-config.js";
-import { animate, inView, stagger } from "motion";
+import { animate, hover, inView, scroll, stagger } from "motion";
 
 const copy = {
   en: {
@@ -135,9 +135,26 @@ if (!reduceMotion) {
     ease: "easeInOut",
   });
 
-  document.querySelectorAll(".step-card, .price-card").forEach((card) => {
-    card.addEventListener("pointerenter", () => animate(card, { y: -5, scale: 1.015 }, { duration: 0.22, ease: "easeOut" }));
-    card.addEventListener("pointerleave", () => animate(card, { y: 0, scale: 1 }, { duration: 0.24, ease: "easeOut" }));
+  animate(".flag-metallic", { x: ["-110%", "110%"] }, {
+    duration: 7,
+    delay: stagger(1.1),
+    repeat: Infinity,
+    ease: "easeInOut",
+  });
+
+  document.querySelectorAll("[data-flag-wave]").forEach((wave) => wave.beginElement?.());
+
+  const ethiopiaParallax = animate(".flag-ethiopia", { x: [0, -26] }, { ease: "linear" });
+  const usParallax = animate(".flag-united-states", { x: [0, 26] }, { ease: "linear" });
+  scroll(ethiopiaParallax, { target: document.querySelector(".hero"), offset: ["start end", "end start"] });
+  scroll(usParallax, { target: document.querySelector(".hero"), offset: ["start end", "end start"] });
+
+  const pageProgress = animate("[data-scroll-progress]", { scaleX: [0, 1] }, { ease: "linear" });
+  scroll(pageProgress);
+
+  hover(".step-card, .price-card", (element) => {
+    animate(element, { y: -5, scale: 1.015 }, { duration: 0.24, ease: "easeOut" });
+    return () => animate(element, { y: 0, scale: 1 }, { duration: 0.25, ease: "easeOut" });
   });
 }
 
