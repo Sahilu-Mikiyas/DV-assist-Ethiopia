@@ -1,4 +1,5 @@
 import { siteConfig } from "/site-config.js";
+import { animate, inView, stagger } from "motion";
 
 const copy = {
   en: {
@@ -79,4 +80,64 @@ mobileMenu.querySelectorAll("a").forEach((link) => link.addEventListener("click"
   menuToggle.setAttribute("aria-expanded", "false");
   mobileMenu.hidden = true;
 }));
+
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+if (!reduceMotion) {
+  const introItems = [...document.querySelector(".hero-copy").children];
+  introItems.forEach((element) => element.setAttribute("data-motion-intro", ""));
+
+  const revealItems = document.querySelectorAll(
+    ".section-heading > *, .step-card, .service-copy > *, .price-card, .trust-grid > div > *, .trust-point, .faq-list details, .contact-card, .contact-consent",
+  );
+  revealItems.forEach((element) => element.setAttribute("data-motion-reveal", ""));
+  document.documentElement.classList.add("motion-ready");
+
+  animate(introItems, { opacity: [0, 1], y: [22, 0] }, {
+    duration: 0.72,
+    delay: stagger(0.1),
+    ease: "easeOut",
+  });
+
+  inView("[data-motion-reveal]", (element) => {
+    const siblingIndex = [...element.parentElement.children].indexOf(element);
+    const entrance = animate(element, { opacity: [0, 1], y: [24, 0] }, {
+      duration: 0.62,
+      delay: Math.min(siblingIndex * 0.07, 0.28),
+      ease: "easeOut",
+    });
+    return () => entrance.stop();
+  }, { amount: 0.14 });
+
+  animate(".art-sun", { scale: [1, 1.045, 1], rotate: [0, 3, 0] }, {
+    duration: 12,
+    repeat: Infinity,
+    ease: "easeInOut",
+  });
+  animate(".flag-ethiopia", { y: [0, -10, 0], rotate: [-8, -5, -8] }, {
+    duration: 7.5,
+    repeat: Infinity,
+    ease: "easeInOut",
+  });
+  animate(".flag-united-states", { y: [0, 10, 0], rotate: [7, 4, 7] }, {
+    duration: 8.5,
+    repeat: Infinity,
+    ease: "easeInOut",
+  });
+  animate(".art-card", { y: [0, -5, 0], rotate: [-2, -1, -2] }, {
+    duration: 6,
+    repeat: Infinity,
+    ease: "easeInOut",
+  });
+  animate(".floating-chip", { y: [0, -7, 0] }, {
+    duration: 5,
+    delay: stagger(0.7),
+    repeat: Infinity,
+    ease: "easeInOut",
+  });
+
+  document.querySelectorAll(".step-card, .price-card").forEach((card) => {
+    card.addEventListener("pointerenter", () => animate(card, { y: -5, scale: 1.015 }, { duration: 0.22, ease: "easeOut" }));
+    card.addEventListener("pointerleave", () => animate(card, { y: 0, scale: 1 }, { duration: 0.24, ease: "easeOut" }));
+  });
+}
 

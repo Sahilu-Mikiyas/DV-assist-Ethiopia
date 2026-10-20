@@ -1,10 +1,10 @@
 # Public landing page deployment
 
-This small Compose bundle serves the bilingual `apps/web` landing page and its synthetic-only `/demo.html` preview. It does not run the React account portal, Go API, PostgreSQL, applicant sign-in, case storage, photo upload, payment, or confirmation storage. That keeps the current public site informational while the real-data launch gates remain open.
+This small Compose bundle builds the bilingual `apps/web` landing page with Motion and serves its synthetic-only `/demo.html` preview from the generated static assets. It does not run the React account portal, Go API, PostgreSQL, applicant sign-in, case storage, photo upload, payment, or confirmation storage. That keeps the current public site informational while the real-data launch gates remain open.
 
 ## Put the public page online
 
-1. Choose a host with Docker Engine and Docker Compose. Point your domain to it and configure HTTPS using a managed reverse proxy or tunnel.
+1. Choose a host with Docker Engine and Docker Compose. The Docker build runs `npm ci` and `npm run build` in `apps/web`, then copies only the static output into Nginx. Point your domain to the host and configure HTTPS using a managed reverse proxy or tunnel.
 2. Copy `deploy/production.env.example` to `deploy/.env.production` on the host. This site needs no application secrets.
 3. From the repository root, run:
 

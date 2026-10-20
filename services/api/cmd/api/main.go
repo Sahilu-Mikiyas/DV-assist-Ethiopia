@@ -28,7 +28,7 @@ func main() {
 		logger.Error("APP_ENV must be development, staging, or production")
 		os.Exit(1)
 	}
-	webRoot := env("WEB_ROOT", filepath.Join("..", "..", "apps", "web"))
+	webRoot := env("WEB_ROOT", filepath.Join("..", "..", "apps", "web", "dist"))
 	trustedProxyCIDRs, parseErr := parseTrustedProxyCIDRs(os.Getenv("TRUSTED_PROXY_CIDRS"))
 	if parseErr != nil {
 		logger.Error("TRUSTED_PROXY_CIDRS must be a comma-separated list of valid, non-global CIDR prefixes")
@@ -118,8 +118,8 @@ func main() {
 	staticHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		setStaticSecurityHeaders(w)
 		files := map[string]string{
-			"/": "index.html", "/index.html": "index.html", "/styles.css": "styles.css",
-			"/main.js": "main.js", "/site-config.js": "site-config.js", "/demo.html": "demo.html",
+			"/": "index.html", "/index.html": "index.html", "/index.css": "index.css",
+			"/index.js": "index.js", "/demo.html": "demo.html",
 			"/demo.css": "demo.css", "/demo.js": "demo.js",
 		}
 		name, ok := files[r.URL.Path]
@@ -129,7 +129,7 @@ func main() {
 		}
 		http.ServeFile(w, r, filepath.Join(webRoot, name))
 	})
-	staticPaths := []string{"/", "/index.html", "/styles.css", "/main.js", "/site-config.js", "/demo.html", "/demo.css", "/demo.js"}
+	staticPaths := []string{"/", "/index.html", "/index.css", "/index.js", "/demo.html", "/demo.css", "/demo.js"}
 	for _, path := range staticPaths {
 		pattern := "GET " + path
 		if path == "/" {
