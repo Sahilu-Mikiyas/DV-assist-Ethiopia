@@ -88,6 +88,8 @@ For the pilot, alert immediately on any newly failed outbox row or SMTP-provider
 
 The worker polls every two seconds, leases one message at a time for 30 seconds, and retries up to five attempts with bounded backoff. A pending row may therefore be waiting for its scheduled retry; alert on age of a *ready* pending row, not all pending rows. A failed row is terminal and its challenge is revoked. Ask the account owner to request a fresh code after correcting the relay problem.
 
+A verified administrator can also read the aggregate API view at `GET /api/v1/admin/ops/email-outbox`. It is MFA-gated and audit logged; it contains counts and age only, never recipient addresses, codes, outbox IDs, or ciphertext. Use the operator SQL below when checking exact queue rows is necessary, and keep that access read-only.
+
 ## Outbox encryption key rotation and recovery
 
 The current outbox format uses one active 32-byte AES-GCM key and does not store a key version. Do not replace the key while any encrypted pending or processing payload remains. Losing the active key makes those queued messages undecryptable; there is no automatic recovery or dual-key rotation support.
