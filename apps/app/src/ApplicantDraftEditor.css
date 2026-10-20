@@ -1,0 +1,14 @@
+.applicant-draft { margin-top: 1rem; }
+.draft-panel { margin-top: .8rem; padding: 1rem; border: 1px solid #dce6e2; border-radius: 14px; background: #fbfdfc; }
+.draft-note { color: #536861; font-size: .92rem; line-height: 1.5; }
+.draft-section { padding: 1rem 0; border-top: 1px solid #e2eae7; }
+.draft-section h5 { margin: 0 0 .8rem; font-size: 1.05rem; }
+.draft-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .8rem; }
+.draft-field { display: flex; flex-direction: column; gap: .4rem; color: #203c33; font-size: .9rem; }
+.draft-field input:not([type=checkbox]), .draft-field select, .draft-field textarea { width: 100%; min-height: 42px; padding: .65rem .75rem; border: 1px solid #c9d7d1; border-radius: 8px; background: #fff; color: #172b24; font: inherit; }
+.draft-field input[type=checkbox] { margin-inline-end: .35rem; }
+.draft-field small, .draft-group p { color: #5a6e66; line-height: 1.45; }
+.draft-group { margin-top: 1rem; padding: .9rem; border: 1px solid #e2eae7; border-radius: 10px; }
+.draft-group h6 { margin: 0; font-size: .98rem; }
+.draft-row { margin: .8rem 0; padding: .8rem; border-radius: 8px; background: #f2f7f4; }
+.draft-row-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: .7rem; }

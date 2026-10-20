@@ -2,6 +2,8 @@ package api
 
 import (
 	"database/sql"
+	"encoding/json"
+	"errors"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -39,6 +41,33 @@ func (s *Server) createCase(w http.ResponseWriter, r *http.Request) {
 	request.CycleKey = strings.TrimSpace(request.CycleKey)
 	if !cycleKeyPattern.MatchString(request.CycleKey) {
 		writeError(w, http.StatusBadRequest, "invalid_cycle_key", "Enter a cycle key using letters, numbers, dot, underscore, or hyphen.")
+		return
+	}
+	var schemaVersion int
+	var schemaJSON []byte
+	err := s.db.QueryRowContext(r.Context(), `SELECT schema_version,schema_json FROM cycle_form_schemas WHERE cycle_key=$1 AND status='verified' AND is_current AND verified_at IS NOT NULL AND approval_one IS NOT NULL AND approval_two IS NOT NULL AND approval_one<>approval_two`, request.CycleKey).Scan(&schemaVersion, &schemaJSON)
+	if errors.Is(err, sql.ErrNoRows) {
+		writeError(w, http.StatusConflict, "cycle_not_available", "This cycle has no independently reviewed form schema, so preparation cases cannot be created.")
+		return
+	}
+	if err != nil {
+		s.dbError(w, r, "read current cycle schema", err)
+		return
+	}
+	var schema draftSchema
+	if err := json.Unmarshal(schemaJSON, &schema); err != nil {
+		s.dbError(w, r, "decode current cycle schema", err)
+		return
+	}
+	fieldCount := 0
+	for _, section := range schema.Sections {
+		fieldCount += len(section.Fields)
+		for _, group := range section.RepeatableGroups {
+			fieldCount += len(group.Fields)
+		}
+	}
+	if schema.Cycle != request.CycleKey || schema.SchemaVersion != schemaVersion || schema.Status != "verified" || fieldCount == 0 {
+		writeError(w, http.StatusConflict, "cycle_schema_invalid", "This cycle schema is not ready for case creation.")
 		return
 	}
 	tx, err := s.db.BeginTx(r.Context(), nil)

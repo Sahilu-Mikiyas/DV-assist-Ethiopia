@@ -83,6 +83,7 @@ func New(db *sql.DB, config Config, logger *slog.Logger) http.Handler {
 	mux.HandleFunc("POST /api/v1/auth/mfa/activate", s.activateMFA)
 	mux.HandleFunc("POST /api/v1/cases", s.createCase)
 	mux.HandleFunc("GET /api/v1/cases", s.listMyCases)
+	mux.HandleFunc("GET /api/v1/cycles/{cycleKey}/form-schema", s.getCurrentCycleFormSchema)
 	mux.HandleFunc("GET /api/v1/cases/{caseID}", s.getCase)
 	mux.HandleFunc("GET /api/v1/cases/{caseID}/draft", s.getCaseDraft)
 	mux.HandleFunc("PUT /api/v1/cases/{caseID}/draft", s.saveCaseDraft)
