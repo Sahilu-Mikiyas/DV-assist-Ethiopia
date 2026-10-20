@@ -122,3 +122,7 @@ These checks format, statically analyze, compile, and build the code. GitHub Act
 ## Official DV information
 
 This service is not affiliated with the U.S. Government. Official cycle dates, fields, fees, and photo requirements can change. Verify the current [State Department DV information](https://travel.state.gov/content/travel/en/us-visas/immigrate/diversity-visa-program-entry.html) before relying on cycle-specific guidance.
+
+## Deployment bundle
+
+A provider-neutral single-host Compose build is available in [`deploy/README.md`](deploy/README.md). It serves the bilingual public landing page and synthetic-only demo on a loopback-only web port; it does not expose applicant accounts or APIs. See the launch gates before enabling any real-data features.
