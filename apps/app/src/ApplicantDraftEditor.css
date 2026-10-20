@@ -12,3 +12,13 @@
 .draft-group h6 { margin: 0; font-size: .98rem; }
 .draft-row { margin: .8rem 0; padding: .8rem; border-radius: 8px; background: #f2f7f4; }
 .draft-row-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: .7rem; }
+.draft-review { padding-top: .4rem; }
+.draft-review ul { display: grid; gap: .45rem; padding-inline-start: 1.25rem; color: #733e26; }
+.draft-review-ok { padding: .8rem 1rem; border-radius: 9px; background: #eaf5ed; color: #24573e; line-height: 1.5; }
+.draft-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: .55rem; margin: .7rem 0; }
+.draft-summary > div { min-width: 0; padding: .65rem .75rem; border: 1px solid #e2eae7; border-radius: 8px; background: #fff; }
+.draft-summary dt { color: #536861; font-size: .82rem; }
+.draft-summary dd { margin: .25rem 0 0; color: #172b24; overflow-wrap: anywhere; }
+.draft-review-group { margin: .8rem 0; }
+.draft-review-group h6 { margin: .7rem 0; }
+@media print { .applicant-draft > button, .draft-note, .draft-review > button { display: none; } .draft-panel { border: 0; padding: 0; } }
