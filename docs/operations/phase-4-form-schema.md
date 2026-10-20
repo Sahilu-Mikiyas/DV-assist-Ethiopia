@@ -10,6 +10,10 @@ The data-only config shape is described by `config/dv-cycles/schema-v1.json`. It
 
 The official instructions page currently lists DV-2026. The Department's DV-2027 notice says registration dates will be announced later. Therefore `config/dv-cycles/dv-2027.json` is `blocked_pending_official_instructions`, has no sections, and must not be used to collect DV answers. When official instructions are published, two reviewers should record the exact sources and verification date, compare every proposed field and rule to those sources, and release a new immutable config version. Do not edit answers in place or treat the sample schema as official form content.
 
+## Validator coverage
+
+The cycle-config check validates bilingual section and field labels, supported field types, bounded text fields, select options, repeatable-group bounds and uniqueness, conditional field references, and HTTPS source links on `travel.state.gov`. DV-2027 remains blocked with zero fields until applicable official instructions are published and reviewed. This improves configuration integrity; it does not enable applicant-data intake.
+
 ## Current limits
 
 - The schema wizard is local prototype behavior and stores only in the browser tab's session storage.
