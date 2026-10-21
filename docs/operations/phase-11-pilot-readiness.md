@@ -1,15 +1,17 @@
 # Phase 11 — Controlled pilot and launch readiness
 
-**Implementation status (October 17, 2026):** The home page displays a read-only readiness panel. Every production gate is still blocked; the panel cannot be checked off or used as launch approval. Real users, answers, photos, documents, and payments remain out of scope for this preview.
+**Implementation status (October 21, 2026):** The home page displays a read-only readiness panel and a dated official-status notice. Every production gate is still blocked; neither the panel nor this source check is launch approval. Real users, answers, photos, documents, and payments remain out of scope for this preview.
 
 ## Open launch gates
 
-- Verify applicable official DV-cycle instructions and version the cycle config with source/reviewer metadata.
+- Verify applicable official DV-cycle instructions and version the cycle config with source/reviewer metadata. The October 21 status snapshot records DV-2027 dates as unannounced in the current Department notice; keep its config blocked and empty. Recheck all sources before publishing cycle-specific claims.
 - Complete PostgreSQL setup and migration; pass cross-account authorization, role/assignment, MFA, audit, concurrency, logout, backup, and restore checks.
 - Approve privacy notice, consent wording, service boundary, retention/deletion periods, package price, refund policy, and payment SOP.
 - Verify private upload, malware scan/quarantine, photo-review process, access restriction, and deletion lifecycle before accepting any photos.
 - Complete bilingual copy review, mobile/low-bandwidth and accessibility checks, staff training, support coverage, incident response, and escalation rehearsal.
 - Verify deployment security, secrets handling, monitoring, backup protection, rollback, and production data-region/provider claims.
+
+The public notice must distinguish the DV-2027 entry schedule from the separate Department notice pausing DV visa issuance. See [the official cycle status snapshot](phase-11-official-cycle-status.md) for the sources checked, exact product consequences, and recheck procedure.
 
 ## Pilot scope after gates
 
