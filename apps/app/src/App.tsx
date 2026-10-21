@@ -4,6 +4,7 @@ import { SchemaWizard } from './SchemaWizard'
 import { NextPhasesPanel } from './NextPhasesPanel'
 import { clearSchemaWizardDraft } from './schemaStorage'
 import './App.css'
+import './PortalPolish.css'
 
 type Lang = 'en' | 'am'
 type Step = 0 | 1 | 2 | 3
@@ -224,3 +225,4 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 }
 
 export default App
+
