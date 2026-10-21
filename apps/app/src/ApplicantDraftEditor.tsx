@@ -18,8 +18,8 @@ type FormSchema = { cycle: string; status: string; schemaVersion: number; sectio
 type DraftBody = { schemaVersion: number; revision: number; answers: Record<string, unknown> }
 
 const copy = {
-  en: { open: 'Open saved draft', close: 'Close draft', loading: 'Loading reviewed form…', save: 'Save draft', saving: 'Saving…', saved: 'Draft saved to your secure case workspace.', empty: 'No reviewed form schema is available for this cycle yet. Answer collection is disabled.', local: 'Use this private workspace only after your cycle is approved. Draft answers are encrypted before database storage.', add: 'Add another', remove: 'Remove', required: 'Required', storage: 'Secure draft storage is not configured on this server.', error: 'Could not load this draft. Refresh and try again.', conflict: 'This draft changed in another session, or it uses an older form version. Editing is paused until the version change is reviewed.' },
-  am: { open: 'የተቀመጠ ረቂቅ ክፈት', close: 'ረቂቁን ዝጋ', loading: 'የተገመገመው ቅጽ እየጫነ ነው…', save: 'ረቂቁን አስቀምጥ', saving: 'በማስቀመጥ ላይ…', saved: 'ረቂቁ በደህንነቱ በተጠበቀ የጉዳይ ቦታ ተቀምጧል።', empty: 'ለዚህ ዑደት የተገመገመ ቅጽ ገና የለም። መልስ መሰብሰብ ተዘግቷል።', local: 'የዑደትዎ መመሪያ ከተፈቀደ በኋላ ብቻ ይህን የግል ቦታ ይጠቀሙ። ረቂቅ መልሶች ወደ ዳታቤዝ ከመቀመጣቸው በፊት ይመሰጠራሉ።', add: 'ሌላ ጨምር', remove: 'አስወግድ', required: 'ያስፈልጋል', storage: 'በዚህ አገልጋይ የደህንነት ረቂቅ ማከማቻ አልተዋቀረም።', error: 'ይህን ረቂቅ መጫን አልተቻለም። ያድሱና እንደገና ይሞክሩ።', conflict: 'ይህ ረቂቅ ተቀይሯል ወይም የቅጽ አሮጌ ስሪት ይጠቀማል። የስሪት ለውጡ እስኪገመገም አርትዖት ተቋርጧል።' },
+  en: { open: 'Open saved draft', close: 'Close draft', loading: 'Loading reviewed form…', save: 'Save draft', saving: 'Saving…', saved: 'Draft saved to your secure case workspace.', empty: 'No reviewed form schema is available for this cycle yet. Answer collection is disabled.', local: 'Use this private workspace only after your cycle is approved. Draft answers are encrypted before database storage.', add: 'Add another', remove: 'Remove', required: 'Required', storage: 'Secure draft storage is not configured on this server.', error: 'Could not load this draft. Refresh and try again.', conflict: 'This draft changed in another session, or it uses an older form version. Editing is paused until the version change is reviewed.', review: 'Review answers', edit: 'Edit answers', reviewNote: 'This is a completeness aid for your own review. It is not official approval, legal consent, or confirmation that an entry is ready to submit.', missing: 'Required answers still to check', complete: 'No unanswered required fields were found by this basic check. Review every answer carefully; this does not confirm eligibility or official readiness.', unanswered: 'Not answered', noRows: 'Add at least one record', row: 'Record', yes: 'Yes', no: 'No' },
+  am: { open: 'የተቀመጠ ረቂቅ ክፈት', close: 'ረቂቁን ዝጋ', loading: 'የተገመገመው ቅጽ እየጫነ ነው…', save: 'ረቂቁን አስቀምጥ', saving: 'በማስቀመጥ ላይ…', saved: 'ረቂቁ በደህንነቱ በተጠበቀ የጉዳይ ቦታ ተቀምጧል።', empty: 'ለዚህ ዑደት የተገመገመ ቅጽ ገና የለም። መልስ መሰብሰብ ተዘግቷል።', local: 'የዑደትዎ መመሪያ ከተፈቀደ በኋላ ብቻ ይህን የግል ቦታ ይጠቀሙ። ረቂቅ መልሶች ወደ ዳታቤዝ ከመቀመጣቸው በፊት ይመሰጠራሉ።', add: 'ሌላ ጨምር', remove: 'አስወግድ', required: 'ያስፈልጋል', storage: 'በዚህ አገልጋይ የደህንነት ረቂቅ ማከማቻ አልተዋቀረም።', error: 'ይህን ረቂቅ መጫን አልተቻለም። ያድሱና እንደገና ይሞክሩ።', conflict: 'ይህ ረቂቅ ተቀይሯል ወይም የቅጽ አሮጌ ስሪት ይጠቀማል። የስሪት ለውጡ እስኪገመገም አርትዖት ተቋርጧል።', review: 'መልሶችን ገምግም', edit: 'መልሶችን አርትዕ', reviewNote: 'ይህ ለራስዎ የሙሉነት ማረጋገጫ እገዛ ብቻ ነው። ይህ ይፋዊ ማረጋገጫ፣ ሕጋዊ ፈቃድ ወይም ማመልከቻው ለመላክ ዝግጁ መሆኑን የሚያሳይ አይደለም።', missing: 'እስካሁን ያልተመለሱ አስፈላጊ ጥያቄዎች', complete: 'በዚህ መሠረታዊ ምርመራ ያልተመለሰ አስፈላጊ መስክ አልተገኘም። ሁሉንም መልሶች በጥንቃቄ ይመልከቱ፤ ይህ ብቁነትን ወይም ይፋዊ ዝግጁነትን አያረጋግጥም።', unanswered: 'አልተመለሰም', noRows: 'ቢያንስ አንድ መዝገብ ያክሉ', row: 'መዝገብ', yes: 'አዎ', no: 'አይ' },
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -36,6 +36,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 function label(value: Localized, language: Language): string { return value[language] || value.en }
+function blank(value: unknown): boolean { return typeof value !== 'string' || value.trim() === '' }
 
 export function ApplicantDraftEditor({ caseID, cycleKey, language }: { caseID: string; cycleKey: string; language: Language }) {
   const t = copy[language]
@@ -47,6 +48,7 @@ export function ApplicantDraftEditor({ caseID, cycleKey, language }: { caseID: s
   const [revision, setRevision] = useState(0)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [reviewing, setReviewing] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -82,6 +84,17 @@ export function ApplicantDraftEditor({ caseID, cycleKey, language }: { caseID: s
     } finally { setBusy(false) }
   }
 
+  const missingRequired: Array<{ sectionID: string; sectionTitle: string; label: string }> = schema ? schema.sections.flatMap((section) => {
+    const missing = section.fields.filter((field) => field.required && (!field.visibleWhen || answers[field.visibleWhen.field] === field.visibleWhen.equals) && (field.type === 'boolean' ? typeof answers[field.id] !== 'boolean' : blank(answers[field.id])))
+      .map((field) => ({ sectionID: section.id, sectionTitle: label(section.title, language), label: label(field.label, language) }))
+    const groups = (section.repeatableGroups || []).flatMap((group) => {
+      const rows = Array.isArray(answers[group.id]) ? answers[group.id] as Array<Record<string, unknown>> : []
+      if (rows.length < group.minItems) return [{ sectionID: section.id, sectionTitle: label(section.title, language), label: `${label(group.title, language)} — ${t.noRows}` }]
+      return rows.flatMap((row, index) => group.fields.filter((field) => field.required && (!field.visibleWhen || row[field.visibleWhen.field] === field.visibleWhen.equals) && (field.type === 'boolean' ? typeof row[field.id] !== 'boolean' : blank(row[field.id]))).map((field) => ({ sectionID: section.id, sectionTitle: label(section.title, language), label: `${label(group.title, language)} · ${t.row} ${index + 1}: ${label(field.label, language)}` })))
+    })
+    return [...missing, ...groups]
+  }) : []
+
   return <div className="applicant-draft">
     <button className="p3-button" type="button" onClick={toggleDraft}>{open ? t.close : t.open}</button>
     {open && <div className="draft-panel">
@@ -91,6 +104,19 @@ export function ApplicantDraftEditor({ caseID, cycleKey, language }: { caseID: s
       {!loading && !error && !schema && <p className="draft-note">{t.empty}</p>}
       {schema && <>
         <h4>{schema.cycle} · {language === 'am' ? 'የተገመገመ ቅጽ' : 'Reviewed form'} · v{schema.schemaVersion}</h4>
+        {reviewing ? <div className="draft-review" aria-live="polite">
+          <p className="draft-note">{t.reviewNote}</p>
+          {missingRequired.length > 0 ? <><h5>{t.missing}</h5><ul>{missingRequired.map((item, index) => <li key={`${item.sectionID}-${item.label}-${index}`}><strong>{item.sectionTitle}:</strong> {item.label} — {t.unanswered}</li>)}</ul></> : <p className="draft-review-ok">{t.complete}</p>}
+          {schema.sections.map((section) => <section className="draft-section" key={section.id}><h5>{label(section.title, language)}</h5>
+            <dl className="draft-summary">{section.fields.filter((field) => !field.visibleWhen || answers[field.visibleWhen.field] === field.visibleWhen.equals).map((field) => {
+              const value = answers[field.id]
+              const shown = field.type === 'boolean' ? (typeof value === 'boolean' ? (value ? t.yes : t.no) : t.unanswered) : field.type === 'select' && typeof value === 'string' ? label(field.options?.find((option) => option.value === value)?.label || { en: value }, language) : (typeof value === 'string' && value.trim() ? value : t.unanswered)
+              return <div key={field.id}><dt>{label(field.label, language)}</dt><dd>{shown}</dd></div>
+            })}</dl>
+            {(section.repeatableGroups || []).map((group) => { const rows = Array.isArray(answers[group.id]) ? answers[group.id] as Array<Record<string, unknown>> : []; return <div className="draft-review-group" key={group.id}><h6>{label(group.title, language)}</h6>{rows.length === 0 ? <p>{t.noRows}</p> : rows.map((row, index) => <dl className="draft-summary" key={`${group.id}-${index}`}><dt>{t.row} {index + 1}</dt>{group.fields.filter((field) => !field.visibleWhen || row[field.visibleWhen.field] === field.visibleWhen.equals).map((field) => <div key={field.id}><dt>{label(field.label, language)}</dt><dd>{typeof row[field.id] === 'string' && (row[field.id] as string).trim() ? row[field.id] as string : typeof row[field.id] === 'boolean' ? ((row[field.id] as boolean) ? t.yes : t.no) : t.unanswered}</dd></div>)}</dl>)}</div> })}
+          </section>)}
+          <button type="button" className="p3-secondary" onClick={() => setReviewing(false)}>{t.edit}</button>
+        </div> : <>
         {schema.sections.map((section) => <section className="draft-section" key={section.id}><h5>{label(section.title, language)}</h5>
           <div className="draft-fields">{section.fields.filter((field) => !field.visibleWhen || answers[field.visibleWhen.field] === field.visibleWhen.equals).map((field) => <DraftField key={field.id} field={field} language={language} t={t} value={answers[field.id]} disabled={busy} onChange={(value) => update(field.id, value)} />)}</div>
           {(section.repeatableGroups || []).map((group) => {
@@ -102,7 +128,9 @@ export function ApplicantDraftEditor({ caseID, cycleKey, language }: { caseID: s
           })}
         </section>)}
         {message && <p className="p3-success" role="status">{message}</p>}
+        <button type="button" className="p3-secondary" disabled={busy} onClick={() => setReviewing(true)}>{t.review}</button>
         <button type="button" className="p3-button" disabled={busy} onClick={() => void save()}>{busy ? t.saving : t.save}</button>
+        </>}
       </>}
     </div>}
   </div>

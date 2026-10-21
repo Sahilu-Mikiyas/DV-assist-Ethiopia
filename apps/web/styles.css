@@ -3,3 +3,26 @@
 @media(max-width:740px){.wrap{width:min(100% - 36px,560px)}.nav{height:68px}.nav-links{display:none}.nav-actions>.button{display:none}.menu-toggle{display:block}.hero{padding:54px 0 52px}.hero-grid{grid-template-columns:1fr;gap:14px}.hero-copy{text-align:center}.hero-copy .eyebrow,.hero-actions,.trust-row{justify-content:center}.hero-lead{margin-inline:auto;font-size:16px}.hero-actions{margin:22px 0 21px}.hero-art{height:360px;margin-top:2px}.art-sun{width:300px;height:300px;right:9%;top:17px}.art-card{width:min(360px,85%)}.chip-photo{right:0;top:13px}.chip-family{left:0;bottom:12px}.art-decoration{right:5%;bottom:4px}.notice-inner{padding:15px 0;align-items:flex-start;flex-wrap:wrap;gap:8px 12px}.notice-inner p{font-size:12px;flex:1 1 calc(100% - 36px)}.notice-inner a{margin-left:32px}.section{padding:68px 0}.steps-grid{gap:12px}.step-card{padding:19px;min-height:195px}.service-grid,.trust-grid,.faq-wrap{grid-template-columns:1fr;gap:34px}.service-grid{gap:30px}.price-card{max-width:480px;width:100%;margin:auto}.trust-grid{gap:27px}.faq-wrap{gap:20px}.faq-wrap .section-heading{margin-bottom:12px}.contact-section{padding:20px 0 48px}.contact-card{grid-template-columns:44px 1fr;padding:26px;gap:14px}.contact-mark{width:42px;height:42px}.contact-copy h2{font-size:22px}.contact-card>.button{grid-column:2;justify-self:start;margin-top:4px}.footer-inner{flex-wrap:wrap;justify-content:flex-start}.footer-inner p{flex:1 1 100%;order:3}.footer-bottom{flex-direction:column;gap:6px}}
 @media(max-width:430px){.wrap{width:calc(100% - 30px)}h1{font-size:42px}.hero-actions{gap:17px;flex-direction:column}.trust-row{gap:8px 14px;font-size:11px}.hero-art{height:330px}.art-card{padding:20px}.art-sun{width:270px;height:270px;right:5%}.floating-chip{font-size:10px;padding:9px 10px}.steps-grid{grid-template-columns:1fr}.step-card{min-height:0}.step-top{margin-bottom:14px}.section-heading h2,.service-copy h2,.trust-grid h2{font-size:35px}.price-card{padding:24px}.fee-row{font-size:11px}.contact-card{padding:23px 19px}.footer-bottom{font-size:9px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* Motion-powered landing page details */
+.hero-orb{filter:blur(34px)}
+.orb-three{width:290px;height:290px;right:38%;bottom:-190px;background:#d9e9fb99}
+.art-sun{z-index:0}
+.floating-flag{position:absolute;z-index:1;width:73%;aspect-ratio:2/1;overflow:hidden;border:5px solid #fff;border-radius:16px;box-shadow:0 28px 55px -24px #18392780;transform-origin:center}
+.floating-flag svg{display:block;width:100%;height:100%}
+.flag-ethiopia{top:10px;left:-2%;transform:rotate(-8deg)}
+.flag-united-states{right:-2%;bottom:22px;transform:rotate(7deg);aspect-ratio:1.9/1}
+.art-card{z-index:2}
+.floating-chip{z-index:4}
+.motion-ready [data-motion-intro],.motion-ready [data-motion-reveal]{opacity:0;will-change:transform,opacity}
+.hero-art{perspective:1000px}
+.scroll-progress{height:3px;position:absolute;inset:auto 0 0;overflow:hidden;pointer-events:none}
+.scroll-progress span{display:block;width:100%;height:100%;background:linear-gradient(90deg,#078846,#f3d33f,#d83a3b);transform:scaleX(0);transform-origin:left center}
+.floating-flag{overflow:hidden;isolation:isolate;backface-visibility:hidden}
+.floating-flag svg{position:relative;z-index:0;filter:drop-shadow(0 1px 1px #17251b50)}
+.flag-metallic{position:absolute;z-index:1;inset:-4% -14%;pointer-events:none;opacity:.66;mix-blend-mode:soft-light;background:linear-gradient(105deg,transparent 26%,#fff8 44%,#ffffff20 51%,transparent 70%);filter:blur(1.2px)}
+.flag-metallic::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,#10281b24 0 2%,transparent 5% 14%,#ffffff42 17%,transparent 22%);mix-blend-mode:overlay;opacity:.8}
+.floating-flag::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:inherit;box-shadow:inset 0 8px 14px #ffffff3b,inset 0 -11px 18px #101b2629,inset 10px 0 18px #15231d20}
+@media(max-width:740px){.flag-ethiopia{top:4px;left:0}.flag-united-states{right:0;bottom:15px}.floating-flag{width:70%;border-width:4px;border-radius:12px}}
+@media(max-width:430px){.floating-flag{width:68%}.flag-ethiopia{top:7px}.flag-united-states{bottom:10px}}
+@media(prefers-reduced-motion:reduce){.motion-ready [data-motion-intro],.motion-ready [data-motion-reveal]{opacity:1!important;transform:none!important;will-change:auto}}

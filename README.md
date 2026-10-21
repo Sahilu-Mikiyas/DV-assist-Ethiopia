@@ -36,7 +36,7 @@ Applicant preparation and review assistance for Ethiopian applicants considering
 
 ```text
 apps/app/                 React + TypeScript applicant/staff portal
-apps/web/                 Static landing page and earlier demo prototype
+apps/web/                 Bilingual landing page and demo, built with Vite and Motion
 services/api/              Go HTTP API and one-time admin bootstrap command
 packages/api-contract/     OpenAPI source
 config/dv-cycles/          Reviewed, versioned cycle configuration (later phase)
@@ -77,14 +77,22 @@ The home page shows the Phase 10 confirmation-vault lock and Phase 11 launch-rea
 
 Open two PowerShell terminals from the repository root. The Go server can run without a database for health and synthetic demo routes; account/case endpoints return a clear 503 until PostgreSQL and configuration are available.
 
-Terminal 1:
+Terminal 1 (build and serve the marketing site):
+
+```powershell
+Set-Location apps/web
+npm ci
+npm run dev -- --host 127.0.0.1
+```
+
+Terminal 2 (Go API and synthetic demo routes):
 
 ```powershell
 Set-Location services/api
 go run ./cmd/api
 ```
 
-Terminal 2:
+Terminal 3 (React account/app prototype):
 
 ```powershell
 Set-Location apps/app
@@ -92,7 +100,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173/](http://localhost:5173/). The React portal checks `/api/v1/session`; without a configured database, account features are unavailable. The API listens on `127.0.0.1:8081` by default because port 8080 was unavailable in this environment. The legacy prototype remains at [http://127.0.0.1:8081/demo.html](http://127.0.0.1:8081/demo.html).
+Open the landing page at [http://127.0.0.1:5173/](http://127.0.0.1:5173/) and the React portal at [http://localhost:5174/](http://localhost:5174/) if the default port is occupied. The React portal checks `/api/v1/session`; without a configured database, account features are unavailable. The Go API listens on `127.0.0.1:8081` by default in this environment, serves the built landing page from `apps/web/dist`, and provides the synthetic demo at [http://127.0.0.1:8081/demo.html](http://127.0.0.1:8081/demo.html). Run `npm run build` in `apps/web` before starting the Go server.
 
 ## Enable the account/case API locally
 

@@ -36,12 +36,14 @@
           <a href="/demo.html">Try the demo</a>
         <a href="#contact" data-i18n="navCta">Talk to us</a>
       </div>
+      <div class="scroll-progress" aria-hidden="true"><span data-scroll-progress></span></div>
     </header>
 
     <main id="main">
       <section class="hero" id="top">
         <div class="hero-orb orb-one" aria-hidden="true"></div>
         <div class="hero-orb orb-two" aria-hidden="true"></div>
+        <div class="hero-orb orb-three" aria-hidden="true"></div>
         <div class="wrap hero-grid">
           <div class="hero-copy">
             <div class="eyebrow"><span class="live-dot"></span><span data-i18n="eyebrow">A preparation service for Ethiopian applicants</span></div>
@@ -59,7 +61,15 @@
           </div>
           <div class="hero-art" aria-label="A preview of a preparation checklist">
             <div class="art-sun"></div>
-            <div class="art-card">
+            <div class="floating-flag flag-ethiopia" aria-hidden="true">
+              <svg viewBox="0 0 180 90" role="presentation"><defs><filter id="ethiopia-cloth-wave" x="-8%" y="-12%" width="116%" height="124%"><feTurbulence type="fractalNoise" baseFrequency=".008 .045" numOctaves="1" seed="3" result="fabricNoise"><animate data-flag-wave attributeName="baseFrequency" values=".008 .045;.016 .065;.008 .045" dur="6s" repeatCount="indefinite" begin="indefinite"/></feTurbulence><feDisplacementMap in="SourceGraphic" in2="fabricNoise" scale="5" xChannelSelector="R" yChannelSelector="G"/></filter></defs><g filter="url(#ethiopia-cloth-wave)"><rect width="180" height="30" fill="#078846"/><rect y="30" width="180" height="30" fill="#f3d33f"/><rect y="60" width="180" height="30" fill="#d83a3b"/><circle cx="90" cy="45" r="22" fill="#1767ad"/><path d="m90 27 4.8 13h13.7L97.4 48l4.2 13L90 53l-11.6 8 4.2-13-11.1-8h13.7z" fill="none" stroke="#f8df68" stroke-width="2.2" stroke-linejoin="round"/></g></svg>
+              <span class="flag-metallic" aria-hidden="true"></span>
+            </div>
+            <div class="floating-flag flag-united-states" aria-hidden="true">
+              <svg viewBox="0 0 190 100" role="presentation"><defs><filter id="united-states-cloth-wave" x="-8%" y="-12%" width="116%" height="124%"><feTurbulence type="fractalNoise" baseFrequency=".008 .045" numOctaves="1" seed="6" result="fabricNoise"><animate data-flag-wave attributeName="baseFrequency" values=".008 .045;.016 .065;.008 .045" dur="6.8s" repeatCount="indefinite" begin="indefinite"/></feTurbulence><feDisplacementMap in="SourceGraphic" in2="fabricNoise" scale="5" xChannelSelector="R" yChannelSelector="G"/></filter></defs><g filter="url(#united-states-cloth-wave)"><rect width="190" height="100" fill="#fff"/><g fill="#b22234"><path d="M0 0h190v8H0zm0 15.4h190v8H0zm0 15.4h190v8H0zm0 15.4h190v8H0zm0 15.4h190v8H0zm0 15.4h190v8H0zm0 15.4h190v8H0z"/></g><rect width="76" height="54" fill="#354276"/><g fill="#fff"><circle cx="9" cy="9" r="2"/><circle cx="22" cy="9" r="2"/><circle cx="35" cy="9" r="2"/><circle cx="48" cy="9" r="2"/><circle cx="61" cy="9" r="2"/><circle cx="15" cy="18" r="2"/><circle cx="28" cy="18" r="2"/><circle cx="41" cy="18" r="2"/><circle cx="54" cy="18" r="2"/><circle cx="9" cy="27" r="2"/><circle cx="22" cy="27" r="2"/><circle cx="35" cy="27" r="2"/><circle cx="48" cy="27" r="2"/><circle cx="61" cy="27" r="2"/><circle cx="15" cy="36" r="2"/><circle cx="28" cy="36" r="2"/><circle cx="41" cy="36" r="2"/><circle cx="54" cy="36" r="2"/><circle cx="9" cy="45" r="2"/><circle cx="22" cy="45" r="2"/><circle cx="35" cy="45" r="2"/><circle cx="48" cy="45" r="2"/><circle cx="61" cy="45" r="2"/></g></g></svg>
+              <span class="flag-metallic" aria-hidden="true"></span>
+            </div>
+            <div class="art-card" data-motion-float="card">
               <div class="art-card-top"><span class="mini-brand-mark"></span><span data-i18n="artLabel">YOUR PREPARATION</span><span class="art-menu">•••</span></div>
               <div class="art-title" data-i18n="artTitle">Take it one step at a time.</div>
               <div class="progress-line"><span></span></div>
