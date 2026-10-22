@@ -16,7 +16,7 @@ The cycle-config check validates bilingual section and field labels, supported f
 
 - The schema wizard is local prototype behavior and stores only in the browser tab's session storage.
 - The account portal now fetches a released cycle schema and saves owner-only drafts through the encrypted API. The standalone synthetic wizard remains a local demo and is not a DV form.
-- The API validates known field IDs and value types for saved draft values, and rejects conditional answers when their source condition is not satisfied. Draft saving remains partial: required answers are not enforced until a future explicit completion/review action exists. It does not enforce official form rules, family photo rules, or submission readiness.
+- The API validates known field IDs and value types for saved draft values, and rejects conditional answers when their source condition is not satisfied. Draft saves remain partial. An owner-only review endpoint checks required top-level and repeatable-group answers against the pinned reviewed schema and returns missing field identifiers without returning answer values. This is a completeness aid only; it does not enforce official eligibility rules, photo rules, legal consent, or submission readiness.
 - Phase 3's PostgreSQL migration and account/case authorization gate is still unverified.
 - Do not enter real applicant information or accept payments in this build.
 

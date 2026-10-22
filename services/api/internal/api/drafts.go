@@ -57,6 +57,7 @@ type draftSchema struct {
 		Fields           []draftField `json:"fields"`
 		RepeatableGroups []struct {
 			ID          string       `json:"id"`
+			MinItems    int          `json:"minItems"`
 			MaxItems    int          `json:"maxItems"`
 			UniqueField string       `json:"uniqueField"`
 			Fields      []draftField `json:"fields"`
@@ -67,6 +68,7 @@ type draftSchema struct {
 type draftField struct {
 	ID          string          `json:"id"`
 	Type        string          `json:"type"`
+	Required    bool            `json:"required"`
 	MaxLength   int             `json:"maxLength"`
 	VisibleWhen *draftCondition `json:"visibleWhen"`
 	Options     []struct {
@@ -81,6 +83,7 @@ type draftCondition struct {
 
 type draftGroup struct {
 	Fields      []draftField
+	MinItems    int
 	MaxItems    int
 	UniqueField string
 }
@@ -250,6 +253,123 @@ func (s *Server) saveCaseDraft(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"revision": revision, "schemaVersion": schemaVersion})
 }
 
+func (s *Server) reviewCaseDraft(w http.ResponseWriter, r *http.Request) {
+	user, _, ok := s.requireUser(w, r)
+	if !ok || !s.requireRole(w, r, user, "applicant") {
+		return
+	}
+	caseID := r.PathValue("caseID")
+	if !uuidPattern.MatchString(caseID) {
+		writeError(w, http.StatusNotFound, "case_not_found", "Case not found.")
+		return
+	}
+	if !s.requireDraftOwner(w, r, user.ID, caseID) {
+		return
+	}
+	cycle, version, schemaJSON, ok := s.availableDraftSchema(w, r, caseID)
+	if !ok {
+		return
+	}
+	var request struct {
+		Answers map[string]any `json:"answers"`
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, maxDraftBytes)
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&request); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_request", "Send draft answers to review.")
+		return
+	}
+	var extra any
+	if err := decoder.Decode(&extra); !errors.Is(err, io.EOF) {
+		writeError(w, http.StatusBadRequest, "invalid_request", "Send one JSON object only.")
+		return
+	}
+	if request.Answers == nil {
+		writeError(w, http.StatusBadRequest, "invalid_draft", "Draft answers are required.")
+		return
+	}
+	var schema draftSchema
+	if err := json.Unmarshal(schemaJSON, &schema); err != nil {
+		s.dbError(w, r, "decode verified form schema for review", err)
+		return
+	}
+	if schema.Cycle != cycle || schema.SchemaVersion != version || schema.Status != "verified" {
+		writeError(w, http.StatusConflict, "cycle_schema_invalid", "This cycle schema is not in a usable verified state.")
+		return
+	}
+	if err := validateDraftAnswers(schema, request.Answers); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_draft_answers", err.Error())
+		return
+	}
+	missing := missingRequiredDraftAnswers(schema, request.Answers)
+	if err := recordStandaloneAudit(r.Context(), s.db, user.ID, "case.draft.reviewed", "case", caseID, "success"); err != nil {
+		s.dbError(w, r, "audit draft completeness review", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"complete": len(missing) == 0, "missing": missing, "schemaVersion": version})
+}
+
+type missingDraftAnswer struct {
+	FieldID  string `json:"fieldId,omitempty"`
+	GroupID  string `json:"groupId,omitempty"`
+	RowIndex *int   `json:"rowIndex,omitempty"`
+}
+
+func missingRequiredDraftAnswers(schema draftSchema, answers map[string]any) []missingDraftAnswer {
+	missing := []missingDraftAnswer{}
+	for _, section := range schema.Sections {
+		for _, field := range section.Fields {
+			if !field.Required || !draftConditionSatisfied(field.VisibleWhen, answers) {
+				continue
+			}
+			value, exists := answers[field.ID]
+			if requiredDraftValueMissing(field, value, exists) {
+				missing = append(missing, missingDraftAnswer{FieldID: field.ID})
+			}
+		}
+		for _, group := range section.RepeatableGroups {
+			rawRows, exists := answers[group.ID]
+			rows, ok := rawRows.([]any)
+			if !exists || !ok {
+				rows = []any{}
+			}
+			if len(rows) < group.MinItems {
+				missing = append(missing, missingDraftAnswer{GroupID: group.ID})
+			}
+			for rowIndex, rawRow := range rows {
+				row, ok := rawRow.(map[string]any)
+				if !ok {
+					continue
+				}
+				for _, field := range group.Fields {
+					if !field.Required {
+						continue
+					}
+					value, exists := row[field.ID]
+					if requiredDraftValueMissing(field, value, exists) {
+						index := rowIndex
+						missing = append(missing, missingDraftAnswer{FieldID: field.ID, GroupID: group.ID, RowIndex: &index})
+					}
+				}
+			}
+		}
+	}
+	return missing
+}
+
+func requiredDraftValueMissing(field draftField, value any, exists bool) bool {
+	if !exists {
+		return true
+	}
+	if field.Type == "boolean" {
+		_, ok := value.(bool)
+		return !ok
+	}
+	text, ok := value.(string)
+	return !ok || strings.TrimSpace(text) == ""
+}
+
 func (s *Server) requireDraftOwner(w http.ResponseWriter, r *http.Request, userID, caseID string) bool {
 	var owner, status string
 	err := s.db.QueryRowContext(r.Context(), `SELECT owner_user_id::text,status FROM cases WHERE id=$1::uuid`, caseID).Scan(&owner, &status)
@@ -360,7 +480,7 @@ func validateDraftAnswers(schema draftSchema, answers map[string]any) error {
 			known[field.ID] = field
 		}
 		for _, group := range section.RepeatableGroups {
-			groups[group.ID] = draftGroup{Fields: group.Fields, MaxItems: group.MaxItems, UniqueField: group.UniqueField}
+			groups[group.ID] = draftGroup{Fields: group.Fields, MinItems: group.MinItems, MaxItems: group.MaxItems, UniqueField: group.UniqueField}
 		}
 	}
 	for key, value := range answers {
