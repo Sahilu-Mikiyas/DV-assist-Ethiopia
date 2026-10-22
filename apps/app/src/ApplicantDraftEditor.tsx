@@ -38,6 +38,16 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 function label(value: Localized, language: Language): string { return value[language] || value.en }
 function blank(value: unknown): boolean { return typeof value !== 'string' || value.trim() === '' }
 
+function clearHiddenAnswers(schema: FormSchema, answers: Record<string, unknown>): Record<string, unknown> {
+  const next = { ...answers }
+  for (const section of schema.sections) {
+    for (const field of section.fields) {
+      if (field.visibleWhen && next[field.visibleWhen.field] !== field.visibleWhen.equals) delete next[field.id]
+    }
+  }
+  return next
+}
+
 export function ApplicantDraftEditor({ caseID, cycleKey, language }: { caseID: string; cycleKey: string; language: Language }) {
   const t = copy[language]
   const [open, setOpen] = useState(false)
@@ -58,13 +68,13 @@ export function ApplicantDraftEditor({ caseID, cycleKey, language }: { caseID: s
       request<DraftBody>(`/api/v1/cases/${caseID}/draft`),
     ]).then(([form, draft]) => {
       if (draft.schemaVersion !== form.schema.schemaVersion) throw new Error('draft_schema_version_conflict')
-      if (live) { setSchema(form.schema); setAnswers(draft.answers || {}); setRevision(draft.revision || 0) }
+      if (live) { setSchema(form.schema); setAnswers(clearHiddenAnswers(form.schema, draft.answers || {})); setRevision(draft.revision || 0) }
     }).catch((cause: unknown) => { if (live) setError(cause instanceof Error ? cause.message : 'request_failed') })
       .finally(() => { if (live) setLoading(false) })
     return () => { live = false }
   }, [open, caseID, cycleKey])
 
-  const update = (id: string, value: unknown) => { setAnswers((current) => ({ ...current, [id]: value })); setMessage('') }
+  const update = (id: string, value: unknown) => { if (schema) setAnswers((current) => clearHiddenAnswers(schema, { ...current, [id]: value })); else setAnswers((current) => ({ ...current, [id]: value })); setMessage('') }
   const toggleDraft = () => {
     if (open) { setOpen(false); return }
     setLoading(true); setError(''); setMessage(''); setSchema(null); setAnswers({}); setOpen(true)
