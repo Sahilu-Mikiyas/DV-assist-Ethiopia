@@ -72,6 +72,7 @@ for (const source of dv2027.sources) {
   assert(url.protocol === 'https:' && url.hostname === 'travel.state.gov', 'cycle sources must use the official State Department HTTPS site')
 }
 
+assertOnlyKeys(demo, ['schemaVersion', 'configVersion', 'title', 'description', 'sections'], 'synthetic schema sample')
 assert(demo.schemaVersion === 1 && Number.isInteger(demo.configVersion) && demo.configVersion >= 1, 'synthetic schema sample has invalid version')
 assert(Array.isArray(demo.sections) && demo.sections.length > 0, 'synthetic sample must contain demonstration sections')
 validateLocalized(demo.title, 'synthetic schema title')
