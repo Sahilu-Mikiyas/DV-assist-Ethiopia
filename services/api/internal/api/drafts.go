@@ -303,6 +303,10 @@ func (s *Server) reviewCaseDraft(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	missing := missingRequiredDraftAnswers(schema, request.Answers)
+	if err := recordStandaloneAudit(r.Context(), s.db, user.ID, "case.draft.reviewed", "case", caseID, "success"); err != nil {
+		s.dbError(w, r, "audit draft completeness review", err)
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"complete": len(missing) == 0, "missing": missing, "schemaVersion": version})
 }
 
