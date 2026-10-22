@@ -18,8 +18,8 @@ type FormSchema = { cycle: string; status: string; schemaVersion: number; sectio
 type DraftBody = { schemaVersion: number; revision: number; answers: Record<string, unknown> }
 
 const copy = {
-  en: { open: 'Open saved draft', close: 'Close draft', loading: 'Loading reviewed form…', save: 'Save draft', saving: 'Saving…', saved: 'Draft saved to your secure case workspace.', empty: 'No reviewed form schema is available for this cycle yet. Answer collection is disabled.', local: 'Use this private workspace only after your cycle is approved. Draft answers are encrypted before database storage.', add: 'Add another', remove: 'Remove', required: 'Required', storage: 'Secure draft storage is not configured on this server.', error: 'Could not load this draft. Refresh and try again.', conflict: 'This draft changed in another session, or it uses an older form version. Editing is paused until the version change is reviewed.', review: 'Review answers', edit: 'Edit answers', reviewNote: 'This is a completeness aid for your own review. It is not official approval, legal consent, or confirmation that an entry is ready to submit.', missing: 'Required answers still to check', complete: 'No unanswered required fields were found by this basic check. Review every answer carefully; this does not confirm eligibility or official readiness.', unanswered: 'Not answered', noRows: 'Add at least one record', row: 'Record', yes: 'Yes', no: 'No' },
-  am: { open: 'የተቀመጠ ረቂቅ ክፈት', close: 'ረቂቁን ዝጋ', loading: 'የተገመገመው ቅጽ እየጫነ ነው…', save: 'ረቂቁን አስቀምጥ', saving: 'በማስቀመጥ ላይ…', saved: 'ረቂቁ በደህንነቱ በተጠበቀ የጉዳይ ቦታ ተቀምጧል።', empty: 'ለዚህ ዑደት የተገመገመ ቅጽ ገና የለም። መልስ መሰብሰብ ተዘግቷል።', local: 'የዑደትዎ መመሪያ ከተፈቀደ በኋላ ብቻ ይህን የግል ቦታ ይጠቀሙ። ረቂቅ መልሶች ወደ ዳታቤዝ ከመቀመጣቸው በፊት ይመሰጠራሉ።', add: 'ሌላ ጨምር', remove: 'አስወግድ', required: 'ያስፈልጋል', storage: 'በዚህ አገልጋይ የደህንነት ረቂቅ ማከማቻ አልተዋቀረም።', error: 'ይህን ረቂቅ መጫን አልተቻለም። ያድሱና እንደገና ይሞክሩ።', conflict: 'ይህ ረቂቅ ተቀይሯል ወይም የቅጽ አሮጌ ስሪት ይጠቀማል። የስሪት ለውጡ እስኪገመገም አርትዖት ተቋርጧል።', review: 'መልሶችን ገምግም', edit: 'መልሶችን አርትዕ', reviewNote: 'ይህ ለራስዎ የሙሉነት ማረጋገጫ እገዛ ብቻ ነው። ይህ ይፋዊ ማረጋገጫ፣ ሕጋዊ ፈቃድ ወይም ማመልከቻው ለመላክ ዝግጁ መሆኑን የሚያሳይ አይደለም።', missing: 'እስካሁን ያልተመለሱ አስፈላጊ ጥያቄዎች', complete: 'በዚህ መሠረታዊ ምርመራ ያልተመለሰ አስፈላጊ መስክ አልተገኘም። ሁሉንም መልሶች በጥንቃቄ ይመልከቱ፤ ይህ ብቁነትን ወይም ይፋዊ ዝግጁነትን አያረጋግጥም።', unanswered: 'አልተመለሰም', noRows: 'ቢያንስ አንድ መዝገብ ያክሉ', row: 'መዝገብ', yes: 'አዎ', no: 'አይ' },
+  en: { open: 'Open saved draft', close: 'Close draft', loading: 'Loading reviewed form…', save: 'Save draft', saving: 'Saving…', saved: 'Draft saved to your secure case workspace.', empty: 'No reviewed form schema is available for this cycle yet. Answer collection is disabled.', local: 'Use this private workspace only after your cycle is approved. Draft answers are encrypted before database storage.', add: 'Add another', remove: 'Remove', required: 'Required', storage: 'Secure draft storage is not configured on this server.', error: 'Could not load this draft. Refresh and try again.', conflict: 'This draft changed in another session, or it uses an older form version. Editing is paused until the version change is reviewed.', review: 'Review answers', edit: 'Edit answers', reviewNote: 'This is a completeness aid for your own review. It is not official approval, legal consent, or confirmation that an entry is ready to submit.', missing: 'Required answers still to check', complete: 'No unanswered required fields were found by this basic check. Review every answer carefully; this does not confirm eligibility or official readiness.', serverMissing: 'The secure review check found missing required answers; see the field list or reopen the draft.', unanswered: 'Not answered', noRows: 'Add at least one record', row: 'Record', yes: 'Yes', no: 'No' },
+  am: { open: 'የተቀመጠ ረቂቅ ክፈት', close: 'ረቂቁን ዝጋ', loading: 'የተገመገመው ቅጽ እየጫነ ነው…', save: 'ረቂቁን አስቀምጥ', saving: 'በማስቀመጥ ላይ…', saved: 'ረቂቁ በደህንነቱ በተጠበቀ የጉዳይ ቦታ ተቀምጧል።', empty: 'ለዚህ ዑደት የተገመገመ ቅጽ ገና የለም። መልስ መሰብሰብ ተዘግቷል።', local: 'የዑደትዎ መመሪያ ከተፈቀደ በኋላ ብቻ ይህን የግል ቦታ ይጠቀሙ። ረቂቅ መልሶች ወደ ዳታቤዝ ከመቀመጣቸው በፊት ይመሰጠራሉ።', add: 'ሌላ ጨምር', remove: 'አስወግድ', required: 'ያስፈልጋል', storage: 'በዚህ አገልጋይ የደህንነት ረቂቅ ማከማቻ አልተዋቀረም።', error: 'ይህን ረቂቅ መጫን አልተቻለም። ያድሱና እንደገና ይሞክሩ።', conflict: 'ይህ ረቂቅ ተቀይሯል ወይም የቅጽ አሮጌ ስሪት ይጠቀማል። የስሪት ለውጡ እስኪገመገም አርትዖት ተቋርጧል።', review: 'መልሶችን ገምግም', edit: 'መልሶችን አርትዕ', reviewNote: 'ይህ ለራስዎ የሙሉነት ማረጋገጫ እገዛ ብቻ ነው። ይህ ይፋዊ ማረጋገጫ፣ ሕጋዊ ፈቃድ ወይም ማመልከቻው ለመላክ ዝግጁ መሆኑን የሚያሳይ አይደለም።', missing: 'እስካሁን ያልተመለሱ አስፈላጊ ጥያቄዎች', complete: 'በዚህ መሠረታዊ ምርመራ ያልተመለሰ አስፈላጊ መስክ አልተገኘም። ሁሉንም መልሶች በጥንቃቄ ይመልከቱ፤ ይህ ብቁነትን ወይም ይፋዊ ዝግጁነትን አያረጋግጥም።', serverMissing: 'ደህንነቱ የተጠበቀው የግምገማ ምርመራ አስፈላጊ መልሶች እንደጎደሉ አግኝቷል፤ የመስክ ዝርዝሩን ይመልከቱ ወይም ረቂቁን እንደገና ይክፈቱ።', unanswered: 'አልተመለሰም', noRows: 'ቢያንስ አንድ መዝገብ ያክሉ', row: 'መዝገብ', yes: 'አዎ', no: 'አይ' },
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -59,6 +59,7 @@ export function ApplicantDraftEditor({ caseID, cycleKey, language }: { caseID: s
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [reviewing, setReviewing] = useState(false)
+  const [serverComplete, setServerComplete] = useState<boolean | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -74,7 +75,7 @@ export function ApplicantDraftEditor({ caseID, cycleKey, language }: { caseID: s
     return () => { live = false }
   }, [open, caseID, cycleKey])
 
-  const update = (id: string, value: unknown) => { if (schema) setAnswers((current) => clearHiddenAnswers(schema, { ...current, [id]: value })); else setAnswers((current) => ({ ...current, [id]: value })); setMessage('') }
+  const update = (id: string, value: unknown) => { if (schema) setAnswers((current) => clearHiddenAnswers(schema, { ...current, [id]: value })); else setAnswers((current) => ({ ...current, [id]: value })); setServerComplete(null); setMessage('') }
   const toggleDraft = () => {
     if (open) { setOpen(false); return }
     setLoading(true); setError(''); setMessage(''); setSchema(null); setAnswers({}); setOpen(true)
@@ -84,6 +85,17 @@ export function ApplicantDraftEditor({ caseID, cycleKey, language }: { caseID: s
     rows[index] = { ...(rows[index] || {}), [fieldID]: value }
     update(group.id, rows)
   }
+  const review = async () => {
+    setBusy(true); setError(''); setMessage('')
+    try {
+      const result = await request<{ complete: boolean }>(`/api/v1/cases/${caseID}/draft/review`, { method: 'POST', body: JSON.stringify({ answers }) })
+      setServerComplete(result.complete)
+      setReviewing(true)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t.error)
+    } finally { setBusy(false) }
+  }
+
   const save = async () => {
     setBusy(true); setError(''); setMessage('')
     try {
@@ -116,7 +128,7 @@ export function ApplicantDraftEditor({ caseID, cycleKey, language }: { caseID: s
         <h4>{schema.cycle} · {language === 'am' ? 'የተገመገመ ቅጽ' : 'Reviewed form'} · v{schema.schemaVersion}</h4>
         {reviewing ? <div className="draft-review" aria-live="polite">
           <p className="draft-note">{t.reviewNote}</p>
-          {missingRequired.length > 0 ? <><h5>{t.missing}</h5><ul>{missingRequired.map((item, index) => <li key={`${item.sectionID}-${item.label}-${index}`}><strong>{item.sectionTitle}:</strong> {item.label} — {t.unanswered}</li>)}</ul></> : <p className="draft-review-ok">{t.complete}</p>}
+          {missingRequired.length > 0 || serverComplete === false ? <><h5>{t.missing}</h5><ul>{missingRequired.map((item, index) => <li key={`${item.sectionID}-${item.label}-${index}`}><strong>{item.sectionTitle}:</strong> {item.label} — {t.unanswered}</li>)}{missingRequired.length === 0 && <li>{t.serverMissing}</li>}</ul></> : <p className="draft-review-ok">{t.complete}</p>}
           {schema.sections.map((section) => <section className="draft-section" key={section.id}><h5>{label(section.title, language)}</h5>
             <dl className="draft-summary">{section.fields.filter((field) => !field.visibleWhen || answers[field.visibleWhen.field] === field.visibleWhen.equals).map((field) => {
               const value = answers[field.id]
@@ -125,7 +137,7 @@ export function ApplicantDraftEditor({ caseID, cycleKey, language }: { caseID: s
             })}</dl>
             {(section.repeatableGroups || []).map((group) => { const rows = Array.isArray(answers[group.id]) ? answers[group.id] as Array<Record<string, unknown>> : []; return <div className="draft-review-group" key={group.id}><h6>{label(group.title, language)}</h6>{rows.length === 0 ? <p>{t.noRows}</p> : rows.map((row, index) => <dl className="draft-summary" key={`${group.id}-${index}`}><dt>{t.row} {index + 1}</dt>{group.fields.filter((field) => !field.visibleWhen || row[field.visibleWhen.field] === field.visibleWhen.equals).map((field) => <div key={field.id}><dt>{label(field.label, language)}</dt><dd>{typeof row[field.id] === 'string' && (row[field.id] as string).trim() ? row[field.id] as string : typeof row[field.id] === 'boolean' ? ((row[field.id] as boolean) ? t.yes : t.no) : t.unanswered}</dd></div>)}</dl>)}</div> })}
           </section>)}
-          <button type="button" className="p3-secondary" onClick={() => setReviewing(false)}>{t.edit}</button>
+          <button type="button" className="p3-secondary" onClick={() => { setReviewing(false); setServerComplete(null) }}>{t.edit}</button>
         </div> : <>
         {schema.sections.map((section) => <section className="draft-section" key={section.id}><h5>{label(section.title, language)}</h5>
           <div className="draft-fields">{section.fields.filter((field) => !field.visibleWhen || answers[field.visibleWhen.field] === field.visibleWhen.equals).map((field) => <DraftField key={field.id} field={field} language={language} t={t} value={answers[field.id]} disabled={busy} onChange={(value) => update(field.id, value)} />)}</div>
@@ -138,7 +150,7 @@ export function ApplicantDraftEditor({ caseID, cycleKey, language }: { caseID: s
           })}
         </section>)}
         {message && <p className="p3-success" role="status">{message}</p>}
-        <button type="button" className="p3-secondary" disabled={busy} onClick={() => setReviewing(true)}>{t.review}</button>
+        <button type="button" className="p3-secondary" disabled={busy} onClick={() => void review()}>{t.review}</button>
         <button type="button" className="p3-button" disabled={busy} onClick={() => void save()}>{busy ? t.saving : t.save}</button>
         </>}
       </>}
