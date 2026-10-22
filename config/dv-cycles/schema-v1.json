@@ -46,9 +46,33 @@
         "visibleWhen": { "$ref": "#/$defs/condition" }
       },
       "allOf": [
-        { "if": { "properties": { "type": { "const": "select" } } }, "then": { "required": ["options"], "properties": { "options": { "minItems": 1 } } } },
-        { "if": { "properties": { "type": { "enum": ["text", "textarea"] } } }, "then": { "required": ["maxLength"] } },
-        { "if": { "properties": { "type": { "enum": ["date", "boolean"] } } }, "then": { "not": { "anyOf": [{ "required": ["options"] }, { "required": ["maxLength"] }] } } }
+        {
+          "if": { "properties": { "type": { "const": "select" } } },
+          "then": {
+            "required": ["options"],
+            "properties": { "options": { "minItems": 1 } },
+            "not": { "required": ["maxLength"] }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "enum": ["text", "textarea"] } } },
+          "then": {
+            "required": ["maxLength"],
+            "not": { "required": ["options"] }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "enum": ["date", "boolean"] } } },
+          "then": {
+            "not": { "anyOf": [{ "required": ["options"] }, { "required": ["maxLength"] }] }
+          }
+        }
+      ]
+    },
+    "groupField": {
+      "allOf": [
+        { "$ref": "#/$defs/field" },
+        { "not": { "required": ["visibleWhen"] } }
       ]
     },
     "repeatableGroup": {
@@ -62,7 +86,11 @@
         "minItems": { "type": "integer", "minimum": 0 },
         "maxItems": { "type": "integer", "minimum": 1, "maximum": 30 },
         "uniqueField": { "type": "string" },
-        "fields": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/field" } }
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/groupField" }
+        }
       }
     },
     "localized": {
