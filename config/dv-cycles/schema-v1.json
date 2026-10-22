@@ -46,8 +46,9 @@
         "visibleWhen": { "$ref": "#/$defs/condition" }
       },
       "allOf": [
-        { "if": { "properties": { "type": { "const": "select" } } }, "then": { "required": ["options"] } },
-        { "if": { "properties": { "type": { "enum": ["text", "textarea"] } } }, "then": { "properties": { "maxLength": { "type": "integer" } } } }
+        { "if": { "properties": { "type": { "const": "select" } } }, "then": { "required": ["options"], "properties": { "options": { "minItems": 1 } } } },
+        { "if": { "properties": { "type": { "enum": ["text", "textarea"] } } }, "then": { "required": ["maxLength"] } },
+        { "if": { "properties": { "type": { "enum": ["date", "boolean"] } } }, "then": { "not": { "anyOf": [{ "required": ["options"] }, { "required": ["maxLength"] }] } } }
       ]
     },
     "repeatableGroup": {
@@ -74,13 +75,16 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["value", "label"],
-      "properties": { "value": { "type": "string" }, "label": { "$ref": "#/$defs/localized" } }
+      "properties": { "value": { "type": "string", "minLength": 1 }, "label": { "$ref": "#/$defs/localized" } }
     },
     "condition": {
       "type": "object",
       "additionalProperties": false,
       "required": ["field", "equals"],
-      "properties": { "field": { "type": "string" }, "equals": {} }
+      "properties": {
+        "field": { "type": "string", "minLength": 1 },
+        "equals": { "oneOf": [{ "type": "string" }, { "type": "boolean" }] }
+      }
     }
   }
 }
