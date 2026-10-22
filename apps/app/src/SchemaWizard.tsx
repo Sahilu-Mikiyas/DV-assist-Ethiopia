@@ -23,6 +23,16 @@ type FormConfig = { schemaVersion: number; configVersion: number; title: Localiz
 
 const config = sample as FormConfig
 const cycleConfig = cycle as { cycle: string; status: string; sections: unknown[] }
+
+function clearHiddenValues(values: Record<string, unknown>): Record<string, unknown> {
+  const next = { ...values }
+  for (const section of config.sections) {
+    for (const field of section.fields) {
+      if (field.visibleWhen && next[field.visibleWhen.field] !== field.visibleWhen.equals) delete next[field.id]
+    }
+  }
+  return next
+}
 const copy = {
   en: {
     eyebrow: 'PHASES 4–5 · SCHEMA & FAMILY SAFEGUARDS',
@@ -70,7 +80,10 @@ function SchemaField({ field, language, value, onChange, idPrefix = '' }: { fiel
 
 export function SchemaWizard({ language, onClose }: { language: Language; onClose: () => void }) {
   const [values, setValues] = useState<Record<string, unknown>>(() => {
-    try { return JSON.parse(sessionStorage.getItem(schemaDraftStorageKey) || '{}') as Record<string, unknown> } catch { return {} }
+    try {
+      const saved: unknown = JSON.parse(sessionStorage.getItem(schemaDraftStorageKey) || '{}')
+      return saved && typeof saved === 'object' && !Array.isArray(saved) ? clearHiddenValues(saved as Record<string, unknown>) : {}
+    } catch { return {} }
   })
   const [step, setStep] = useState(0)
   const [showPhotoGate, setShowPhotoGate] = useState(false)
@@ -87,7 +100,7 @@ export function SchemaWizard({ language, onClose }: { language: Language; onClos
   }, [values])
 
   function update(field: string, value: unknown) {
-    setValues((current) => ({ ...current, [field]: value }))
+    setValues((current) => clearHiddenValues({ ...current, [field]: value }))
   }
 
   function rowsFor(group: RepeatableGroup): RecordRow[] {
