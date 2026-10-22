@@ -158,6 +158,445 @@ paths:
         '200': { description: MFA enabled for the account. }
         '400': { $ref: '#/components/responses/BadRequest' }
         '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/cycles/{cycleKey}/form-schema:
+    parameters:
+      - { name: cycleKey, in: path, required: true, schema: { type: string, pattern: '^[A-Za-z0-9._-]{1,32}    post:
+      operationId: createCase
+      summary: Create a minimal preparation case
+      description: Creates only case metadata; it does not accept DV answers or documents.
+      security: [{ sessionCookie: [], csrfHeader: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [cycleKey]
+              properties:
+                cycleKey: { type: string, pattern: '^[A-Za-z0-9._-]{1,32}$' }
+      responses:
+        '201':
+          description: Created case, owned by the current applicant.
+          headers:
+            ETag: { schema: { type: string } }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  case: { $ref: '#/components/schemas/Case' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      operationId: listMyCases
+      summary: List only the current applicant's cases
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200':
+          description: Owner-scoped cases.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CasesResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/cases/{caseID}:
+    parameters:
+      - { name: caseID, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getCase
+      summary: Read a case owned by the account or assigned to staff
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200':
+          description: Case metadata.
+          headers: { ETag: { schema: { type: string } } }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  case: { $ref: '#/components/schemas/Case' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/cases/{caseID}/draft/review:
+    parameters:
+      - { name: caseID, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: reviewCaseDraftCompleteness
+      summary: Check required answers for an owner-owned draft
+      description: Uses the currently reviewed schema and submitted draft values. This is a completeness aid only; it does not confirm eligibility, official readiness, or submission.
+      security: [{ sessionCookie: [], csrfHeader: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [answers]
+              properties:
+                answers: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Completeness result; no answer values are returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [complete, missing, schemaVersion]
+                properties:
+                  complete: { type: boolean }
+                  schemaVersion: { type: integer, minimum: 1 }
+                  missing:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      properties:
+                        fieldId: { type: string }
+                        groupId: { type: string }
+                        rowIndex: { type: integer, minimum: 0 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /api/v1/cases/{caseID}/draft:
+    parameters:
+      - { name: caseID, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getCaseDraft
+      summary: Read an applicant's encrypted draft
+      description: Applicant-owner only. Answers are decrypted only for the owner and are never included in audit metadata. Draft values are checked against the schema version pinned to the case.
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200':
+          description: Draft data for the owner; answers may be incomplete.
+          headers:
+            Cache-Control: { schema: { type: string, const: no-store } }
+            ETag: { schema: { type: string } }
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [revision, answers, schemaVersion]
+                properties:
+                  revision: { type: integer, minimum: 0 }
+                  schemaVersion: { type: integer, minimum: 1 }
+                  answers: { type: object, additionalProperties: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+    put:
+      operationId: saveCaseDraft
+      summary: Save a partial applicant draft
+      description: Applicant-owner only. The server checks answer IDs and value types against the current reviewed schema and encrypts answers before database storage. Required answers may remain incomplete. Request body is limited to 128 KiB.
+      security: [{ sessionCookie: [], csrfHeader: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expectedRevision, answers]
+              properties:
+                expectedRevision: { type: integer, minimum: 0 }
+                answers: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Encrypted draft saved; revision increments.
+          headers:
+            Cache-Control: { schema: { type: string, const: no-store } }
+            ETag: { schema: { type: string } }
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [revision, schemaVersion]
+                properties:
+                  revision: { type: integer, minimum: 1 }
+                  schemaVersion: { type: integer, minimum: 1 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /api/v1/cases/{caseID}/events:
+    parameters:
+      - { name: caseID, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getCaseTimeline
+      summary: Read owner/assigned-staff case history
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200': { description: Safe status and workflow event timeline. }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/staff/cases:
+    get:
+      operationId: listStaffCases
+      summary: List assigned cases; administrators see all cases
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200':
+          description: Staff case queue.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CasesResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/staff/cases/{caseID}/assignment:
+    parameters:
+      - { name: caseID, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: assignCase
+      summary: Assign an open case to an active staff account
+      description: Administrator-only; stale revisions return conflict.
+      security: [{ sessionCookie: [], csrfHeader: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [staffUserId, expectedRevision]
+              properties:
+                staffUserId: { type: string, format: uuid }
+                expectedRevision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Assignment updated; revision increments. }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/v1/staff/cases/{caseID}/transition:
+    parameters:
+      - { name: caseID, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: transitionCase
+      summary: Change case status following the allowed state graph
+      security: [{ sessionCookie: [], csrfHeader: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [status, expectedRevision]
+              properties:
+                status: { $ref: '#/components/schemas/CaseStatus' }
+                expectedRevision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Status updated and event recorded. }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/v1/admin/ops/email-outbox:
+    get:
+      operationId: getEmailOutboxStatus
+      summary: Read aggregate sign-in email delivery queue status
+      description: Administrator and verified MFA only. Returns aggregate counts and age; no recipient, challenge code, outbox identifier, or ciphertext is exposed. The read is audit logged.
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200':
+          description: Aggregate queue status.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EmailOutboxStatusResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+        '500':
+          description: The status could not be recorded or retrieved.
+          content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+  /api/v1/admin/staff:
+    get:
+      operationId: listStaffUsers
+      summary: List active staff accounts for case assignment
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200': { description: Verified staff account identifiers and MFA state. }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/admin/users:
+    get:
+      operationId: findVerifiedUser
+      summary: Find one verified account by exact email for role management
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - { name: email, in: query, required: true, schema: { type: string, format: email } }
+      responses:
+        '200': { description: Verified account metadata and current roles. }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/admin/users/{userID}/roles:
+    parameters:
+      - { name: userID, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: changeUserRole
+      summary: Grant or revoke a staff/admin role
+      security: [{ sessionCookie: [], csrfHeader: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [role, action]
+              properties:
+                role: { type: string, enum: [staff, administrator] }
+                action: { type: string, enum: [grant, revoke] }
+      responses:
+        '200': { description: Role change audited. }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/admin/users/{userID}/mfa-reset:
+    parameters:
+      - { name: userID, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: resetUserMFA
+      summary: Reset another staff account's MFA and revoke its sessions
+      security: [{ sessionCookie: [], csrfHeader: [] }]
+      responses:
+        '200': { description: Reset audited; account must enroll again. }
+        '403': { $ref: '#/components/responses/Forbidden' }
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: dv_session
+    csrfHeader:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+  responses:
+    BadRequest:
+      description: Invalid request.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Unauthorized:
+      description: Authentication is required or credentials are invalid.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Forbidden:
+      description: The account lacks the required role, MFA, or CSRF proof.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    NotFound:
+      description: Resource not found or not visible to this account.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Conflict:
+      description: Case already exists, state transition is invalid, or revision is stale.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    RateLimited:
+      description: Request limit reached.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Unavailable:
+      description: Database-backed account features are not configured.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+  schemas:
+    EmailOutboxStatusResponse:
+      type: object
+      additionalProperties: false
+      required: [observedAt, readyPending, oldestReadyPendingSeconds, scheduledRetries, processing, expiredProcessingLeases, failedLast15Minutes]
+      properties:
+        observedAt: { type: string, format: date-time }
+        readyPending: { type: integer, minimum: 0, description: Messages ready for a delivery attempt. }
+        oldestReadyPendingSeconds: { type: integer, minimum: 0, description: Age of the oldest ready pending message; zero when none are ready. }
+        scheduledRetries: { type: integer, minimum: 0, description: Pending messages waiting for their next retry time. }
+        processing: { type: integer, minimum: 0, description: Messages currently claimed by a worker. }
+        expiredProcessingLeases: { type: integer, minimum: 0, description: Processing messages whose worker lease has expired. }
+        failedLast15Minutes: { type: integer, minimum: 0, description: Terminally failed messages updated in the prior 15 minutes. }
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties: { status: { type: string, const: ok } }
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message, requestId]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            requestId: { type: string }
+    User:
+      type: object
+      additionalProperties: false
+      required: [id, email, roles, mfaEnabled, mfaVerified, mfaSetupRequired]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        roles: { type: array, items: { type: string, enum: [applicant, staff, administrator] } }
+        mfaEnabled: { type: boolean }
+        mfaVerified: { type: boolean }
+        mfaSetupRequired: { type: boolean }
+    CaseStatus:
+      type: string
+      enum: [in_preparation, needs_review, ready_for_applicant, closed]
+    Case:
+      type: object
+      additionalProperties: false
+      required: [id, cycleKey, status, revision, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        cycleKey: { type: string }
+        status: { $ref: '#/components/schemas/CaseStatus' }
+        revision: { type: integer, minimum: 1 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        closedAt: { type: string, format: date-time }
+    CasesResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties: { items: { type: array, items: { $ref: '#/components/schemas/Case' } } }
+    DemoCasesResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, name, language, status, note]
+            properties:
+              id: { type: string, pattern: '^DEMO-[0-9]+$' }
+              name: { type: string, description: Fictional placeholder name only. }
+              language: { type: string, enum: [Amharic, English] }
+              status: { type: string, enum: [In preparation, Needs review, Ready for applicant, Closed] }
+              note: { type: string }
+ } }
+    get:
+      operationId: getCurrentCycleFormSchema
+      summary: Read the currently reviewed schema for an available cycle
+      description: Applicant-only. A cycle without a current schema reviewed by two distinct approvers is unavailable; DV-2027 remains blocked until its official instructions are reviewed.
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200':
+          description: Current reviewed form schema.
+          headers:
+            Cache-Control: { schema: { type: string, const: no-store } }
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [schemaVersion, schema]
+                properties:
+                  schemaVersion: { type: integer, minimum: 1 }
+                  schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /api/v1/cases:
     post:
       operationId: createCase
