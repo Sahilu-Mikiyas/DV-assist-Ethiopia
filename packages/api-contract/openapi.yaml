@@ -217,6 +217,50 @@ paths:
                   case: { $ref: '#/components/schemas/Case' }
         '404': { $ref: '#/components/responses/NotFound' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/cases/{caseID}/draft/review:
+    parameters:
+      - { name: caseID, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: reviewCaseDraftCompleteness
+      summary: Check required answers for an owner-owned draft
+      description: Uses the currently reviewed schema and submitted draft values. This is a completeness aid only; it does not confirm eligibility, official readiness, or submission.
+      security: [{ sessionCookie: [], csrfHeader: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [answers]
+              properties:
+                answers: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Completeness result; no answer values are returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [complete, missing, schemaVersion]
+                properties:
+                  complete: { type: boolean }
+                  schemaVersion: { type: integer, minimum: 1 }
+                  missing:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      properties:
+                        fieldId: { type: string }
+                        groupId: { type: string }
+                        rowIndex: { type: integer, minimum: 0 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '503': { $ref: '#/components/responses/Unavailable' }
   /api/v1/cases/{caseID}/events:
     parameters:
       - { name: caseID, in: path, required: true, schema: { type: string, format: uuid } }
