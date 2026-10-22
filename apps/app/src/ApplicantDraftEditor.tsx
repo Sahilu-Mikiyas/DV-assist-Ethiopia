@@ -77,8 +77,8 @@ export function ApplicantDraftEditor({ caseID, cycleKey, language }: { caseID: s
 
   const update = (id: string, value: unknown) => { if (schema) setAnswers((current) => clearHiddenAnswers(schema, { ...current, [id]: value })); else setAnswers((current) => ({ ...current, [id]: value })); setServerComplete(null); setMessage('') }
   const toggleDraft = () => {
-    if (open) { setOpen(false); return }
-    setLoading(true); setError(''); setMessage(''); setSchema(null); setAnswers({}); setOpen(true)
+    if (open) { setOpen(false); setReviewing(false); setServerComplete(null); return }
+    setLoading(true); setError(''); setMessage(''); setSchema(null); setAnswers({}); setReviewing(false); setServerComplete(null); setOpen(true)
   }
   const updateRow = (group: RepeatableGroup, index: number, fieldID: string, value: unknown) => {
     const rows = Array.isArray(answers[group.id]) ? [...answers[group.id] as Array<Record<string, unknown>>] : []
