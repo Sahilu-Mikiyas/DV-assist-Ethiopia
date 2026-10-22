@@ -158,6 +158,33 @@ paths:
         '200': { description: MFA enabled for the account. }
         '400': { $ref: '#/components/responses/BadRequest' }
         '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/cycles/{cycleKey}/form-schema:
+    parameters:
+      - { name: cycleKey, in: path, required: true, schema: { type: string, pattern: '^[A-Za-z0-9._-]{1,32}$' } }
+    get:
+      operationId: getCurrentCycleFormSchema
+      summary: Read the currently reviewed schema for an available cycle
+      description: Applicant-only. A cycle without a current schema reviewed by two distinct approvers is unavailable; DV-2027 remains blocked until its official instructions are reviewed.
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200':
+          description: Current reviewed form schema.
+          headers:
+            Cache-Control:
+              schema: { type: string, const: no-store }
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [schemaVersion, schema]
+                properties:
+                  schemaVersion: { type: integer, minimum: 1 }
+                  schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /api/v1/cases:
     post:
       operationId: createCase
@@ -217,6 +244,74 @@ paths:
                   case: { $ref: '#/components/schemas/Case' }
         '404': { $ref: '#/components/responses/NotFound' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/cases/{caseID}/draft:
+    parameters:
+      - { name: caseID, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getCaseDraft
+      summary: Read an applicant's encrypted draft
+      description: Applicant-owner only. Answers are decrypted only for the owner and are never included in audit metadata. Draft values are checked against the schema version pinned to the case.
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200':
+          description: Draft data for the owner; answers may be incomplete.
+          headers:
+            Cache-Control:
+              schema: { type: string, const: no-store }
+            ETag:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [revision, answers, schemaVersion]
+                properties:
+                  revision: { type: integer, minimum: 0 }
+                  schemaVersion: { type: integer, minimum: 1 }
+                  answers: { type: object, additionalProperties: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+    put:
+      operationId: saveCaseDraft
+      summary: Save a partial applicant draft
+      description: Applicant-owner only. The server validates answer IDs and value types against the reviewed schema, rejects conditionally hidden values, and encrypts answers before database storage. Required answers may remain incomplete. Request body is limited to 128 KiB.
+      security: [{ sessionCookie: [], csrfHeader: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expectedRevision, answers]
+              properties:
+                expectedRevision: { type: integer, minimum: 0 }
+                answers: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Encrypted draft saved; revision increments.
+          headers:
+            Cache-Control:
+              schema: { type: string, const: no-store }
+            ETag:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [revision, schemaVersion]
+                properties:
+                  revision: { type: integer, minimum: 1 }
+                  schemaVersion: { type: integer, minimum: 1 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '503': { $ref: '#/components/responses/Unavailable' }
   /api/v1/cases/{caseID}/draft/review:
     parameters:
       - { name: caseID, in: path, required: true, schema: { type: string, format: uuid } }
