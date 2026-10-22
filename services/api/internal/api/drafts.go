@@ -65,12 +65,18 @@ type draftSchema struct {
 }
 
 type draftField struct {
-	ID        string `json:"id"`
-	Type      string `json:"type"`
-	MaxLength int    `json:"maxLength"`
-	Options   []struct {
+	ID          string          `json:"id"`
+	Type        string          `json:"type"`
+	MaxLength   int             `json:"maxLength"`
+	VisibleWhen *draftCondition `json:"visibleWhen"`
+	Options     []struct {
 		Value string `json:"value"`
 	} `json:"options"`
+}
+
+type draftCondition struct {
+	Field  string `json:"field"`
+	Equals any    `json:"equals"`
 }
 
 type draftGroup struct {
@@ -359,6 +365,9 @@ func validateDraftAnswers(schema draftSchema, answers map[string]any) error {
 	}
 	for key, value := range answers {
 		if field, ok := known[key]; ok {
+			if field.VisibleWhen != nil && !draftConditionSatisfied(field.VisibleWhen, answers) {
+				return fmt.Errorf("Answer for hidden field %s is not allowed.", key)
+			}
 			if err := validateDraftField(field, value); err != nil {
 				return fmt.Errorf("Invalid value for %s.", key)
 			}
@@ -401,6 +410,26 @@ func validateDraftAnswers(schema draftSchema, answers map[string]any) error {
 		}
 	}
 	return nil
+}
+
+func draftConditionSatisfied(condition *draftCondition, answers map[string]any) bool {
+	if condition == nil {
+		return true
+	}
+	source, ok := answers[condition.Field]
+	if !ok {
+		return false
+	}
+	switch expected := condition.Equals.(type) {
+	case string:
+		actual, ok := source.(string)
+		return ok && actual == expected
+	case bool:
+		actual, ok := source.(bool)
+		return ok && actual == expected
+	default:
+		return false
+	}
 }
 
 func validateDraftField(field draftField, value any) error {
